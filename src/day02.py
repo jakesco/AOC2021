@@ -51,7 +51,7 @@ def init_parser() -> str:
 if __name__ == "__main__":
     path = init_parser()
 
-    movements = [Move.from_input(x) for x in read_input(path)]
+    movements = (Move.from_input(x) for x in read_input(path))
 
     position = Position()
     for m in movements:
