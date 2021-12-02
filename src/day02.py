@@ -25,18 +25,20 @@ class Position:
         return self.distance * self.depth
 
     def move(self, movement: Move):
-        if movement.direction == "forward":
-            self.distance += movement.distance
-            self.depth += self.aim * movement.distance
-        elif movement.direction == "up":
-            self.aim -= movement.distance
-        elif movement.direction == "down":
-            self.aim += movement.distance
+        # Dataclass automatically provides __match_args__
+        match movement:
+            case Move('forward', distance):
+                self.distance += distance
+                self.depth += self.aim * distance
+            case Move('up', distance):
+                self.aim -= distance
+            case Move('down', distance):
+                self.aim += distance
 
 
 def read_input(filepath: str):
     with open(filepath, 'r') as f:
-        yield from f.read().splitlines()
+        yield from (line.rstrip('\n') for line in f.readlines())
 
 
 def init_parser() -> str:
@@ -48,6 +50,7 @@ def init_parser() -> str:
 
 if __name__ == "__main__":
     path = init_parser()
+
     movements = [Move.from_input(x) for x in read_input(path)]
 
     position = Position()
