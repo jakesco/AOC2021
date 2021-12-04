@@ -4,7 +4,7 @@ from collections import deque
 
 
 def read_input(filepath: str):
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         while line := f.readline():
             try:
                 yield int(line)
@@ -35,7 +35,9 @@ def count_increases(filepath: str, window: int):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Advent of Code day 1 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    parser.add_argument(
+        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
+    )
     args = parser.parse_args()
 
     filepath = os.path.realpath(args.input[0])

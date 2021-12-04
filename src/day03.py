@@ -20,10 +20,10 @@ def part1(input_) -> tuple[int, int]:
 
     threshold = len(input_) / 2
 
-    gamma = ['1' if x >= threshold else '0' for x in freq]
-    epsilon = ['0' if x >= threshold else '1' for x in freq]
+    gamma = ["1" if x >= threshold else "0" for x in freq]
+    epsilon = ["0" if x >= threshold else "1" for x in freq]
 
-    return (int(''.join(gamma), 2), int(''.join(epsilon), 2))
+    return (int("".join(gamma), 2), int("".join(epsilon), 2))
 
 
 def filter(input_: list[str], filter_: list[str]) -> int:
@@ -41,9 +41,9 @@ def filter(input_: list[str], index: int, most: bool) -> list[str]:
     for m in input_:
         freq += int(m[index])
     if most:
-        filter_ = '1' if freq >= len(input_) / 2 else '0'
+        filter_ = "1" if freq >= len(input_) / 2 else "0"
     else:
-        filter_ = '0' if freq >= len(input_) / 2 else '1'
+        filter_ = "0" if freq >= len(input_) / 2 else "1"
     return [x for x in input_ if x[index] == filter_]
 
 
@@ -66,13 +66,15 @@ def part2(input_) -> tuple[int, int]:
 
 
 def read_input(filepath: str):
-    with open(filepath, 'r') as f:
-        return [line.rstrip('\n') for line in f.readlines()]
+    with open(filepath, "r") as f:
+        return [line.rstrip("\n") for line in f.readlines()]
 
 
 def init_parser() -> str:
     parser = argparse.ArgumentParser(description="Advent of Code day 2 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    parser.add_argument(
+        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
+    )
     args = parser.parse_args()
     return os.path.realpath(args.input[0])
 
@@ -95,5 +97,3 @@ if __name__ == "__main__":
     print(f"O2: {lf[0]} - 23")
     print(f"CO2: {lf[1]} - 10")
     print(f"Life Support: {lf[0] * lf[1]} - 230")
-
-
