@@ -1,6 +1,25 @@
 import argparse
 import os
 
+class Board:
+    pass
+
+def mark(board, number):
+    pass
+
+def check_horizontal(board):
+    pass
+
+
+def check_vertical(board):
+    pass
+
+def check_win(board):
+    pass
+
+def calculate_score(board):
+    pass
+
 def read_input(filepath: str):
     with open(filepath, 'r') as f:
         return [line.rstrip('\n') for line in f.readlines()]
