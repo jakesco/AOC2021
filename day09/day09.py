@@ -5,9 +5,9 @@ from dataclasses import dataclass
 
 
 @dataclass
-class Coordinate:
-    row: int
-    col: int
+class Node:
+    pos: (int, int)
+    val: int
 
 
 class Map:
@@ -33,18 +33,38 @@ class Map:
                 and val < self.elm(row, col - 1)
         )
 
-    def get_local_mins(self) -> list[Coordinate]:
+    def get_local_mins(self) -> list[Node]:
         local_mins = []
         for i in range(self.rows):
             for j in range(self.cols):
                 if self.is_local_min(i, j):
-                    local_mins.append(Coordinate(i, j))
+                    local_mins.append(Node((i, j), self.elm(i, j)))
         return local_mins
+
+    def is_boundry(self, row: int, col: int):
+        return self.elm(row, col) >= 9
 
 
 def calculate_risk(map_: Map) -> int:
-    local_mins = [map_.elm(c.row, c.col) for c in map_.get_local_mins()]
+    local_mins = [map_.elm(c.pos[0], c.pos[1]) for c in map_.get_local_mins()]
     return sum(local_mins) + len(local_mins)
+
+
+def basin_size(map_: Map, row: int, col: int) -> int:
+    """Calculates the size of the basin, given one point in the basin."""
+    if map_.is_boundry(row, col):
+        return 0
+    return (1
+            + basin_size(map_, row - 1, col -1)
+            + basin_size(map_, row - 1, col)
+            + basin_size(map_, row - 1, col + 1)
+            + basin_size(map_, row, col -1)
+            + basin_size(map_, row, col)
+            + basin_size(map_, row, col + 1)
+            + basin_size(map_, row + 1, col -1)
+            + basin_size(map_, row + 1, col)
+            + basin_size(map_, row + 1, col + 1)
+            )
 
 
 def read_input(filepath: str):
@@ -67,6 +87,9 @@ if __name__ == "__main__":
     map_ = read_input(path)
 
     print(f"Part 1: risk = {calculate_risk(map_)}")
+
+    basins = map_.get_local_mins()
+    print(basins)
 
 
 
