@@ -7,7 +7,8 @@ from dataclasses import dataclass
 @dataclass
 class Node:
     pos: (int, int)
-    val: int
+    neighbors: list
+    visited: bool = False
 
 
 class Map:
@@ -33,12 +34,12 @@ class Map:
                 and val < self.elm(row, col - 1)
         )
 
-    def get_local_mins(self) -> list[Node]:
+    def get_local_mins(self) -> list[(int, int)]:
         local_mins = []
         for i in range(self.rows):
             for j in range(self.cols):
                 if self.is_local_min(i, j):
-                    local_mins.append(Node((i, j), self.elm(i, j)))
+                    local_mins.append((i, j))
         return local_mins
 
     def is_boundry(self, row: int, col: int):
@@ -46,25 +47,18 @@ class Map:
 
 
 def calculate_risk(map_: Map) -> int:
-    local_mins = [map_.elm(c.pos[0], c.pos[1]) for c in map_.get_local_mins()]
+    local_mins = [map_.elm(c[0], c[1]) for c in map_.get_local_mins()]
     return sum(local_mins) + len(local_mins)
 
 
-def basin_size(map_: Map, row: int, col: int) -> int:
-    """Calculates the size of the basin, given one point in the basin."""
-    if map_.is_boundry(row, col):
-        return 0
-    return (1
-            + basin_size(map_, row - 1, col -1)
-            + basin_size(map_, row - 1, col)
-            + basin_size(map_, row - 1, col + 1)
-            + basin_size(map_, row, col -1)
-            + basin_size(map_, row, col)
-            + basin_size(map_, row, col + 1)
-            + basin_size(map_, row + 1, col -1)
-            + basin_size(map_, row + 1, col)
-            + basin_size(map_, row + 1, col + 1)
-            )
+def build_basin(map_: Map, node: Node):
+    for i in range(-1, 2):
+        for j in range(-1, 2):
+            if not map_.is_boundry(i, j):
+                node.neighbors.append(Node((i, j), []))
+
+    for n in node.neighbors:
+        build_basin(map_, n)
 
 
 def read_input(filepath: str):
@@ -88,8 +82,11 @@ if __name__ == "__main__":
 
     print(f"Part 1: risk = {calculate_risk(map_)}")
 
-    basins = map_.get_local_mins()
-    print(basins)
+    local_mins = map_.get_local_mins()
+    print(f"Local Minimums: {local_mins}")
+    first_node = Node(local_mins[0], [])
+    print(build_basin(map_, first_node))
+    print(first_node)
 
 
 
