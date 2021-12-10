@@ -22,9 +22,7 @@ The risk level of a low point is 1 plus its height. In the above example, the ri
 
 Find all of the low points on your heightmap. What is the sum of the risk levels of all low points on your heightmap?
 
-Your puzzle answer was 528.
-
-The first half of this puzzle is complete! It provides one gold star: *
+Your puzzle answer was `528`.
 
 ## Part Two
 Next, you need to find the largest basins so you know what areas are most important to avoid.
@@ -72,3 +70,5 @@ The bottom-right basin, size 9:
 Find the three largest basins and multiply their sizes together. In the above example, this is 9 * 14 * 9 = 1134.
 
 What do you get if you multiply together the sizes of the three largest basins?
+
+Your puzzle answer was `920448`.

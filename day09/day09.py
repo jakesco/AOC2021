@@ -3,6 +3,9 @@ import os
 
 from dataclasses import dataclass
 
+from queue import Queue
+from functools import reduce
+
 
 class Map:
     def __init__(self, data: list[list[int]]):
@@ -60,7 +63,10 @@ class Graph:
                 n = Node(i, j, map_.elm(i, j))
                 self.nodes[n] = set()
 
+        # Connect nodes if they are adjacent and value < 9
         for node, neighbors in self.nodes.items():
+            if node.val >= 9:
+                continue
             candidates = (
                 self.find_node(node.x + 1, node.y),
                 self.find_node(node.x - 1, node.y),
@@ -77,9 +83,25 @@ class Graph:
                 return n
         return None
 
-    def calculate_basin_size(node: Node, acc: int = 0) -> int:
-        # TODO: add adjacent nodes to que, visit one by one
-        pass
+    def calculate_basin_size(self, start_node: Node) -> int:
+        # Traverse the graph and count nodes connected nodes
+        q = Queue()
+        q.put_nowait(start_node)
+
+        count = 0
+        while not q.empty():
+
+            n = q.get_nowait()
+            if not n.visited:
+                n.visited = True
+                count += 1
+
+            for neighbor in self.nodes[n]:
+                if neighbor.visited:
+                    continue
+                q.put_nowait(neighbor)
+
+        return count
 
     def __repr__(self):
         return str(self.nodes)
@@ -110,7 +132,16 @@ if __name__ == "__main__":
     map_ = read_input(path)
 
     print(f"Part 1: risk = {calculate_risk(map_)}")
-    local_mins = map_.get_local_mins()
 
     g = Graph(map_)
-    print(g)
+    local_mins = [g.find_node(i, j) for i, j in map_.get_local_mins()]
+
+    basins = [g.calculate_basin_size(node) for node in local_mins]
+    basins.sort(reverse=True)
+    product = reduce(lambda a, b: a * b, basins[:3])
+    print(f"Part 2: size = {product}")
+
+
+
+
+
