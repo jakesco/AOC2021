@@ -4,13 +4,6 @@ import os
 from dataclasses import dataclass
 
 
-@dataclass
-class Node:
-    pos: (int, int)
-    neighbors: list
-    visited: bool = False
-
-
 class Map:
     def __init__(self, data: list[list[int]]):
         self.rows = len(data)
@@ -46,19 +39,55 @@ class Map:
         return self.elm(row, col) >= 9
 
 
+@dataclass
+class Node:
+    x: int
+    y: int
+    val: int
+    visited: bool = False
+
+    def __hash__(self):
+        return hash((self.x, self.y, self.val))
+
+
+class Graph:
+    def __init__(self, map_):
+        self.nodes = dict()
+
+        # Add node for each element in matrix
+        for i in range(map_.rows):
+            for j in range(map_.cols):
+                n = Node(i, j, map_.elm(i, j))
+                self.nodes[n] = set()
+
+        for node, neighbors in self.nodes.items():
+            candidates = (
+                self.find_node(node.x + 1, node.y),
+                self.find_node(node.x - 1, node.y),
+                self.find_node(node.x, node.y + 1),
+                self.find_node(node.x, node.y - 1),
+            )
+            for candidate in candidates:
+                if candidate and candidate.val < 9:
+                    neighbors.add(candidate)
+
+    def find_node(self, x: int, y: int) -> Node|None:
+        for n in self.nodes.keys():
+            if n.x == x and n.y == y:
+                return n
+        return None
+
+    def calculate_basin_size(node: Node, acc: int = 0) -> int:
+        # TODO: add adjacent nodes to que, visit one by one
+        pass
+
+    def __repr__(self):
+        return str(self.nodes)
+
+
 def calculate_risk(map_: Map) -> int:
     local_mins = [map_.elm(c[0], c[1]) for c in map_.get_local_mins()]
     return sum(local_mins) + len(local_mins)
-
-
-def build_basin(map_: Map, node: Node):
-    for i in range(-1, 2):
-        for j in range(-1, 2):
-            if not map_.is_boundry(i, j):
-                node.neighbors.append(Node((i, j), []))
-
-    for n in node.neighbors:
-        build_basin(map_, n)
 
 
 def read_input(filepath: str):
@@ -81,12 +110,7 @@ if __name__ == "__main__":
     map_ = read_input(path)
 
     print(f"Part 1: risk = {calculate_risk(map_)}")
-
     local_mins = map_.get_local_mins()
-    print(f"Local Minimums: {local_mins}")
-    first_node = Node(local_mins[0], [])
-    print(build_basin(map_, first_node))
-    print(first_node)
 
-
-
+    g = Graph(map_)
+    print(g)
