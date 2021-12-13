@@ -1,30 +1,42 @@
 import argparse
 import os
 
-from dataclasses import dataclass
-
-
-@dataclass
-class Node:
-    name: str
-    big: bool
-    visited: bool = False
-
-    def __hash__(self):
-        return hash(self.name)
-
-    @property
-    def can_visit(self):
-        return self.big or not self.visited
+from collections import deque
+from dataclasses import dataclass, field, replace
 
 
 @dataclass(frozen=True)
+class Node:
+    name: str
+    big: bool
+
+    def __repr__(self):
+        return self.name
+
+
+@dataclass
 class Path:
-    path: set[Node]
+    path: list[Node]
+    visited: set[Node]
 
     @property
     def length(self):
         return len(self.path)
+
+    def can_visit(self, node: Node) -> bool:
+        return node.big or not (node in self.visited)
+
+    def current_node(self) -> Node | None:
+        if self.path:
+            return self.path[-1]
+        return None
+
+    def add_to_path(self, node: Node) -> bool:
+        if self.can_visit(node) and node != self.current_node():
+            self.path.append(node)
+            self.visited.add(node)
+            return True
+        return False
 
 
 class Graph:
@@ -35,7 +47,7 @@ class Graph:
     def __str__(self):
         output = []
         for k, v in self.__nodes.items():
-            output.append(f"{k.name} <-> {[n.name for n in v]}")
+            output.append(f"{k} <-> {[n for n in v]}")
         return '\n'.join(output)
 
     def __new_node(self, name) -> Node:
@@ -61,9 +73,28 @@ class Graph:
         self.__nodes[node1].add(node2)
         self.__nodes[node2].add(node1)
 
-    def find_paths(self) -> set[Path]:
-        # TODO: the hard part
-        return set()
+    def find_paths(self) -> list[Path]:
+        start = self.__lookup['start']
+        end = self.__lookup['end']
+        seed = Path([start], {start})
+
+        active = deque([seed])
+
+        paths = list()
+        while active:
+            path = active.popleft()
+            next_ = self.__nodes[path.current_node()]
+
+            for n in next_:
+                p = Path(path.path.copy(), path.visited.copy())
+                if not p.add_to_path(n):
+                    continue
+                if end in p.visited:
+                    paths.append(p)
+                else:
+                    active.append(p)
+
+        return paths
 
 
 def read_input(filepath: str) -> Graph:
@@ -85,6 +116,6 @@ def init_parser() -> str:
 if __name__ == "__main__":
     path = init_parser()
     graph = read_input(path)
-    print(graph)
     paths = graph.find_paths()
     print(f"Part 1: {len(paths)}(10) distinct paths")
+    print(f"Part 2: {len(paths)}(36) distinct paths")
