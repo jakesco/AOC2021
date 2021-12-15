@@ -2,34 +2,37 @@ import argparse
 import os
 
 from collections import Counter
-
-def split_template(template: str) -> list[str]:
-    return [
-        template[i: i + 2]
-        for i in range(len(template) - 1)
-    ]
+from functools import cache
 
 
-def apply_rules(template: str, rules: dict[str, str]) -> str:
-    pairs = split_template(template)
-
-    for i in range(len(pairs)):
-        pair = pairs[i]
-        pair = pair[0] + rules[pair] + pair[1]
-        pairs[i] = pair
-
-    new_template = [pair[:-1] for pair in pairs]
-    new_template.append(template[-1])
-
-    return ''.join(new_template)
+def insert_char(pair: str, ins: str) -> (str, str):
+    return pair[0] + ins, ins + pair[1]
 
 
-def template_score(template: str) -> int:
-    c = Counter(template)
-    common = c.most_common()
+@cache
+def simulate(pair: str, steps: int) -> Counter:
+    if steps <= 0:
+        return Counter(pair)
+    left, right = insert_char(pair, rules[pair])
+    return (
+            simulate(left, steps - 1)
+            + simulate(right, steps - 1)
+            - Counter(rules[pair])
+    )
+
+
+def score(counter: Counter) -> int:
+    common = counter.most_common()
     most = common[0][1]
     least = common[-1][1]
     return most - least
+
+
+def get_pairs(template: str) -> list[str]:
+    return [
+        template[i:i + 2]
+        for i in range(len(template) - 1)
+    ]
 
 
 def read_input(filepath: str) -> (str, dict[str, str]):
@@ -53,9 +56,20 @@ def init_parser() -> str:
 if __name__ == "__main__":
     path = init_parser()
     template, rules = read_input(path)
-    steps = 40
-    for i in range(steps):
-        print(i)
-        template = apply_rules(template, rules)
-    print(f"Part 1: {template_score(template)}")
+    pairs = get_pairs(template)
+
+    dont_double_count = Counter(template[1:-1])
+
+    part1 = Counter()
+    for pair in pairs:
+        part1 += simulate(pair, 10)
+    part1 -= dont_double_count
+    print(f"Part 1: {score(part1)}")
+
+    part2 = Counter()
+    for pair in pairs:
+        part2 += simulate(pair, 40)
+    part2 -= dont_double_count
+    print(f"Part 2: {score(part2)}")
+
 
