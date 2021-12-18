@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
     packet = process_operator(stream)
     print(f"Part 1: {packet.version_sum()}")
-    print(f"Part 1: {eval_(packet)}")
+    print(f"Part 2: {eval_(packet)}")
 
 
 
