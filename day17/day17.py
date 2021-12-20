@@ -34,7 +34,6 @@ class Probe:
         self.dx = dx
         self.dy = dy
         while self.y > target.y[0]:
-            print(self)
             self.step()
             max_height = max(max_height, self.y)
             if self.in_target(target):
@@ -64,5 +63,13 @@ if __name__ == "__main__":
     target = read_input(path)
 
     probe = Probe()
-    print(probe.simulate(6, 9, target))
+    max_height = list()
+    for x in range(250):
+        for y in range(-250, 250):
+            new_height = probe.simulate(x, y, target)
+            if new_height is not None:
+                max_height.append(new_height)
+
+    print(f"Part 1: {max(max_height)}")
+    print(f"Part 2: {len(max_height)}")
 
