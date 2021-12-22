@@ -1,23 +1,13 @@
 import argparse
 import os
+import re
 
 from math import floor, ceil
 
 from abc import ABC, abstractmethod
+from collections import deque
 
 from dataclasses import dataclass
-
-
-def read_input(filepath: str):
-    with open(filepath, 'r') as f:
-        return f.read()
-
-
-def init_parser() -> str:
-    parser = argparse.ArgumentParser(description="Advent of Code day 17 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
-    args = parser.parse_args()
-    return os.path.realpath(args.input[0])
 
 
 class Element(ABC):
@@ -31,8 +21,26 @@ class Element(ABC):
         pass
 
     @abstractmethod
+    def add(self, other: 'Element'):
+        pass
+
+    @abstractmethod
     def can_explode(self) -> bool:
         pass
+
+    @abstractmethod
+    def can_split(self) -> bool:
+        pass
+
+    @abstractmethod
+    def magnitude(self) -> int:
+        pass
+
+    @staticmethod
+    def get_literals(s: 'Element') -> list['Literal']:
+        acc = []
+        s._literals(acc)
+        return acc
 
 
 @dataclass
@@ -47,18 +55,37 @@ class SnailFishNumber(Element):
         self.l._literals(acc)
         self.r._literals(acc)
 
+    def magnitude(self) -> int:
+        return 3 * self.l.magnitude() + 2 * self.r.magnitude()
+
     def add(self, other: Element) -> 'SnailFishNumber':
         result = SnailFishNumber(self, other)
         print(f"{self} + {other}")
-        print(f"= {result}", end="\n\n")
+        print(f"= {result}")
         return SnailFishNumber(self, other)
 
     def reduce(self):
         """Reduces Snailfish number."""
-        pass
+        explode = self.explode(0)
+        if explode is not None:
+            self.apply_explode(explode)
+
+        while self.can_split() or explode is not None:
+            # Do all explodes
+            while explode is not None:
+                explode = self.explode(0)
+                if explode is not None:
+                    self.apply_explode(explode)
+            # split
+            if not self.split():
+                continue
+
+            explode = self.explode(0)
+            if explode is not None:
+                self.apply_explode(explode)
 
     def apply_explode(self, value: tuple[int, int]):
-        literals = get_literals(self)
+        literals = Element.get_literals(self)
         idx = literals.index(Literal(-1))
         if idx - 1 >= 0:
             literals[idx - 1].add(value[0])
@@ -84,15 +111,21 @@ class SnailFishNumber(Element):
             self.r = Literal(-1)
             return (left, right)
         if isinstance(self.l, SnailFishNumber):
-            if done := self.l.explode(depth + 1):
+            done = self.l.explode(depth + 1)
+            if done is not None:
                 return done
         if isinstance(self.r, SnailFishNumber):
-            if done := self.r.explode(depth + 1):
+            done = self.r.explode(depth + 1)
+            if done is not None:
                 return done
         return None
 
     def can_explode(self) -> bool:
         return isinstance(self.l, Literal) and isinstance(self.r, Literal)
+
+    def can_split(self) -> bool:
+        literals = Element.get_literals(self)
+        return any([l.value >= 10 for l in literals])
 
     def split(self) -> bool:
         """Splits left most splittable value, returns True if split was made."""
@@ -121,14 +154,20 @@ class Literal(Element):
     def _literals(self, acc):
         acc.append(self)
 
+    def magnitude(self) -> int:
+        return self.value
+
     def can_explode(self) -> bool:
         return False
+
+    def can_split(self) -> bool:
+        return self.value >= 10
 
     def add(self, val: int):
         self.value += val
 
     def split(self) -> Element:
-        if self.value < 10:
+        if not self.can_split():
             return self
         half = self.value / 2
         left = floor(half)
@@ -136,117 +175,39 @@ class Literal(Element):
         return SnailFishNumber(Literal(left), Literal(right))
 
 
-def get_literals(s: SnailFishNumber) -> list[Literal]:
-    acc = []
-    s._literals(acc)
-    return acc
+def parse_snailfish_number(input_: deque[str]) -> Element:
+    c = input_.popleft()
+    if c.isdigit():
+        return Literal(int(c))
+    left = parse_snailfish_number(input_)
+    right = parse_snailfish_number(input_)
+    return SnailFishNumber(left, right)
+
+
+def read_input(filepath: str) -> list[Element]:
+    output = list()
+    with open(filepath, 'r') as f:
+        for line in f.readlines():
+            chars = re.findall(r'\[|\d', line.strip())
+            snail_string = deque([c for c in chars])
+            output.append(parse_snailfish_number(snail_string))
+    return output
+
+
+def init_parser() -> str:
+    parser = argparse.ArgumentParser(description="Advent of Code day 17 solution.")
+    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    args = parser.parse_args()
+    return os.path.realpath(args.input[0])
 
 
 if __name__ == "__main__":
     path = init_parser()
-    # input_ = read_input(path)
-    # print(input_)
+    numbers = read_input(path)
 
-    # [[[[[9, 8], 1], 2], 3], 4] => [[[[0,9],2],3],4]
-    a = SnailFishNumber(
-        SnailFishNumber(
-            SnailFishNumber(
-                SnailFishNumber(
-                    SnailFishNumber(
-                        Literal(9),
-                        Literal(8)
-                    ),
-                    Literal(1)
-                ),
-                Literal(2)
-            ), Literal(3)
-        ), Literal(4)
-    )
-
-    # [7, [6, [5, [4, [3, 2]]]]] => [7,[6,[5,[7,0]]]]
-    b = SnailFishNumber(
-        Literal(7),
-        SnailFishNumber(
-            Literal(6),
-            SnailFishNumber(
-                Literal(5),
-                SnailFishNumber(
-                    Literal(4),
-                    SnailFishNumber(
-                        Literal(3),
-                        Literal(2)
-                    )
-                )
-            )
-        )
-    )
-
-    # [[6, [5, [4, [3, 2]]]], 1] => [[6,[5,[7,0]]],3]
-    c = SnailFishNumber(
-        SnailFishNumber(
-            Literal(6),
-            SnailFishNumber(
-                Literal(5),
-                SnailFishNumber(
-                    Literal(4),
-                    SnailFishNumber(
-                        Literal(3),
-                        Literal(2)
-                    )
-                )
-            )
-        ),
-        Literal(1)
-    )
-
-    # [[3, [2, [1, [7, 3]]]], [6, [5, [4, [3, 2]]]]]
-    # => [[3, [2, [8, 0]]], [9, [5, [4, [3, 2]]]]]
-    # => [[3, [2, [8, 0]]], [9, [5, [7, 0]]]]
-    d = SnailFishNumber(
-        SnailFishNumber(
-            Literal(3),
-            SnailFishNumber(
-                Literal(2),
-                SnailFishNumber(
-                    Literal(1),
-                    SnailFishNumber(
-                        Literal(7),
-                        Literal(3)
-                    )
-                )
-            )
-        ),
-        SnailFishNumber(
-            Literal(6),
-            SnailFishNumber(
-                Literal(5),
-                SnailFishNumber(
-                    Literal(4),
-                    SnailFishNumber(
-                        Literal(3),
-                        Literal(2)
-                    )
-                )
-            )
-        )
-    )
-
-    for sn in (a, b, c):
-        print(sn, end='')
-        apply = sn.explode(0)
-        sn.apply_explode(apply)
-        print(f' => {sn}')
-
-    print(d)
-    apply = d.explode(0)
-    if apply is not None:
-        d.apply_explode(apply)
-    print(f' => {d}')
-    apply = d.explode(0)
-    if apply is not None:
-        d.apply_explode(apply)
-    print(f' => {d}')
-
-
-
-
+    base = numbers[0]
+    for sn in numbers[1:]:
+        base = base.add(sn)
+        base.reduce()
+        print(base, end="\n\n")
+    print(base.magnitude())
