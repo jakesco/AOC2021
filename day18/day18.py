@@ -57,38 +57,39 @@ class SnailFishNumber(Element):
         """Reduces Snailfish number."""
         pass
 
-    def explode(self, depth):
-        """Explodes left most explodeable value, returns True if explode happened."""
+    def apply_explode(self, value: tuple[int, int]):
+        literals = get_literals(self)
+        idx = literals.index(Literal(-1))
+        if idx - 1 >= 0:
+            literals[idx - 1].add(value[0])
+        if idx + 1 < len(literals):
+            literals[idx + 1].add(value[1])
+        literals[idx].add(1)
+
+    def explode(self, depth) -> tuple[int, int] | None:
+        """
+            Explodes left most explodeable value, returns (left,right) tuple
+            if explode happened else None. (left,right) tuple must be applied
+            via self.apply_explode before explode is complete.
+        """
         # If a pair is nested in 4 pairs, the left pair explodes
         if depth >= 3 and self.l.can_explode():
             left = self.l.l.value
             right = self.l.r.value
-            self.l = Literal(0)
-            literals = get_literals(self)
-            idx = literals.index(self.l)
-            if idx - 1 >= 0:
-                literals[idx - 1].add(left)
-            if idx + 1 < len(literals):
-                literals[idx + 1].add(right)
-            return True
+            self.l = Literal(-1)
+            return (left, right)
         elif depth >= 3 and self.r.can_explode():
             left = self.r.l.value
             right = self.r.r.value
-            self.r = Literal(0)
-            literals = get_literals(self)
-            idx = literals.index(self.r)
-            if idx - 1 >= 0:
-                literals[idx - 1].add(left)
-            if idx + 1 < len(literals):
-                literals[idx + 1].add(right)
-            return True
-        elif isinstance(self.l, SnailFishNumber):
+            self.r = Literal(-1)
+            return (left, right)
+        if isinstance(self.l, SnailFishNumber):
             if done := self.l.explode(depth + 1):
                 return done
-        elif isinstance(self.r, SnailFishNumber):
+        if isinstance(self.r, SnailFishNumber):
             if done := self.r.explode(depth + 1):
                 return done
-        return False
+        return None
 
     def can_explode(self) -> bool:
         return isinstance(self.l, Literal) and isinstance(self.r, Literal)
@@ -198,10 +199,53 @@ if __name__ == "__main__":
         Literal(1)
     )
 
-    for sn in (c,):
+    # [[3, [2, [1, [7, 3]]]], [6, [5, [4, [3, 2]]]]]
+    # => [[3, [2, [8, 0]]], [9, [5, [4, [3, 2]]]]]
+    # => [[3, [2, [8, 0]]], [9, [5, [7, 0]]]]
+    d = SnailFishNumber(
+        SnailFishNumber(
+            Literal(3),
+            SnailFishNumber(
+                Literal(2),
+                SnailFishNumber(
+                    Literal(1),
+                    SnailFishNumber(
+                        Literal(7),
+                        Literal(3)
+                    )
+                )
+            )
+        ),
+        SnailFishNumber(
+            Literal(6),
+            SnailFishNumber(
+                Literal(5),
+                SnailFishNumber(
+                    Literal(4),
+                    SnailFishNumber(
+                        Literal(3),
+                        Literal(2)
+                    )
+                )
+            )
+        )
+    )
+
+    for sn in (a, b, c):
         print(sn, end='')
-        sn.explode(0)
+        apply = sn.explode(0)
+        sn.apply_explode(apply)
         print(f' => {sn}')
+
+    print(d)
+    apply = d.explode(0)
+    if apply is not None:
+        d.apply_explode(apply)
+    print(f' => {d}')
+    apply = d.explode(0)
+    if apply is not None:
+        d.apply_explode(apply)
+    print(f' => {d}')
 
 
 
