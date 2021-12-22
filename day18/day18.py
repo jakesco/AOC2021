@@ -1,6 +1,10 @@
 import argparse
 import os
 
+from math import floor, ceil
+
+from abc import ABC, abstractmethod
+
 from dataclasses import dataclass
 
 
@@ -16,19 +20,22 @@ def init_parser() -> str:
     return os.path.realpath(args.input[0])
 
 
-class Element:
-    pass
+class Element(ABC):
+
+    @abstractmethod
+    def _literals(self, acc) -> list['Literal']:
+        pass
+
+    @abstractmethod
+    def split(self):
+        pass
+
+    @abstractmethod
+    def can_explode(self) -> bool:
+        pass
 
 
-@dataclass(frozen=True)
-class Literal(Element):
-    value: int
-
-    def __repr__(self):
-        return str(self.value)
-
-
-@dataclass(frozen=True)
+@dataclass
 class SnailFishNumber(Element):
     l: Element
     r: Element
@@ -36,11 +43,102 @@ class SnailFishNumber(Element):
     def __repr__(self):
         return f"[{self.l}, {self.r}]"
 
-    def add(self, other: Element) -> Element:
+    def _literals(self, acc):
+        self.l._literals(acc)
+        self.r._literals(acc)
+
+    def add(self, other: Element) -> 'SnailFishNumber':
         result = SnailFishNumber(self, other)
         print(f"{self} + {other}")
         print(f"= {result}", end="\n\n")
         return SnailFishNumber(self, other)
+
+    def reduce(self):
+        """Reduces Snailfish number."""
+        pass
+
+    def explode(self, depth):
+        """Explodes left most explodeable value, returns True if explode happened."""
+        # If a pair is nested in 4 pairs, the left pair explodes
+        if depth >= 3 and self.l.can_explode():
+            left = self.l.l.value
+            right = self.l.r.value
+            self.l = Literal(0)
+            literals = get_literals(self)
+            idx = literals.index(self.l)
+            if idx - 1 >= 0:
+                literals[idx - 1].add(left)
+            if idx + 1 < len(literals):
+                literals[idx + 1].add(right)
+            return True
+        elif depth >= 3 and self.r.can_explode():
+            left = self.r.l.value
+            right = self.r.r.value
+            self.r = Literal(0)
+            literals = get_literals(self)
+            idx = literals.index(self.r)
+            if idx - 1 >= 0:
+                literals[idx - 1].add(left)
+            if idx + 1 < len(literals):
+                literals[idx + 1].add(right)
+            return True
+        elif isinstance(self.l, SnailFishNumber):
+            if done := self.l.explode(depth + 1):
+                return done
+        elif isinstance(self.r, SnailFishNumber):
+            if done := self.r.explode(depth + 1):
+                return done
+        return False
+
+    def can_explode(self) -> bool:
+        return isinstance(self.l, Literal) and isinstance(self.r, Literal)
+
+    def split(self) -> bool:
+        """Splits left most splittable value, returns True if split was made."""
+        if isinstance(self.l, SnailFishNumber):
+            if done := self.l.split():
+                return done
+        if isinstance(self.r, SnailFishNumber):
+            if done := self.r.split():
+                return done
+        if isinstance(self.l, Literal) and self.l.value >= 10:
+            self.l = self.l.split()
+            return True
+        if isinstance(self.r, Literal) and self.r.value >= 10:
+            self.r = self.r.split()
+            return True
+        return False
+
+
+@dataclass
+class Literal(Element):
+    value: int
+
+    def __repr__(self):
+        return str(self.value)
+
+    def _literals(self, acc):
+        acc.append(self)
+
+    def can_explode(self) -> bool:
+        return False
+
+    def add(self, val: int):
+        self.value += val
+
+    def split(self) -> Element:
+        if self.value < 10:
+            return self
+        half = self.value / 2
+        left = floor(half)
+        right = ceil(half)
+        return SnailFishNumber(Literal(left), Literal(right))
+
+
+def get_literals(s: SnailFishNumber) -> list[Literal]:
+    acc = []
+    s._literals(acc)
+    return acc
 
 
 if __name__ == "__main__":
@@ -48,16 +146,63 @@ if __name__ == "__main__":
     # input_ = read_input(path)
     # print(input_)
 
-    a = Literal(1)
-    b = Literal(2)
-    c = Literal(3)
-    d = Literal(4)
-    e = Literal(5)
+    # [[[[[9, 8], 1], 2], 3], 4] => [[[[0,9],2],3],4]
+    a = SnailFishNumber(
+        SnailFishNumber(
+            SnailFishNumber(
+                SnailFishNumber(
+                    SnailFishNumber(
+                        Literal(9),
+                        Literal(8)
+                    ),
+                    Literal(1)
+                ),
+                Literal(2)
+            ), Literal(3)
+        ), Literal(4)
+    )
 
-    x = SnailFishNumber(a, b)
-    y = SnailFishNumber(c, d)
-    z = SnailFishNumber(y, e)
+    # [7, [6, [5, [4, [3, 2]]]]] => [7,[6,[5,[7,0]]]]
+    b = SnailFishNumber(
+        Literal(7),
+        SnailFishNumber(
+            Literal(6),
+            SnailFishNumber(
+                Literal(5),
+                SnailFishNumber(
+                    Literal(4),
+                    SnailFishNumber(
+                        Literal(3),
+                        Literal(2)
+                    )
+                )
+            )
+        )
+    )
 
-    x.add(z)
+    # [[6, [5, [4, [3, 2]]]], 1] => [[6,[5,[7,0]]],3]
+    c = SnailFishNumber(
+        SnailFishNumber(
+            Literal(6),
+            SnailFishNumber(
+                Literal(5),
+                SnailFishNumber(
+                    Literal(4),
+                    SnailFishNumber(
+                        Literal(3),
+                        Literal(2)
+                    )
+                )
+            )
+        ),
+        Literal(1)
+    )
+
+    for sn in (c,):
+        print(sn, end='')
+        sn.explode(0)
+        print(f' => {sn}')
+
+
 
 
