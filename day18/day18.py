@@ -1,4 +1,5 @@
 import argparse
+import itertools
 import os
 import re
 
@@ -6,6 +7,7 @@ from math import floor, ceil
 
 from abc import ABC, abstractmethod
 from collections import deque
+from itertools import permutations
 
 from dataclasses import dataclass
 
@@ -60,8 +62,8 @@ class SnailFishNumber(Element):
 
     def add(self, other: Element) -> 'SnailFishNumber':
         result = SnailFishNumber(self, other)
-        print(f"{self} + {other}")
-        print(f"= {result}")
+        # print(f"{self} + {other}")
+        # print(f"= {result}")
         return SnailFishNumber(self, other)
 
     def reduce(self):
@@ -105,7 +107,7 @@ class SnailFishNumber(Element):
             right = self.l.r.value
             self.l = Literal(-1)
             return (left, right)
-        elif depth >= 3 and self.r.can_explode():
+        if depth >= 3 and self.r.can_explode():
             left = self.r.l.value
             right = self.r.r.value
             self.r = Literal(-1)
@@ -132,12 +134,12 @@ class SnailFishNumber(Element):
         if isinstance(self.l, SnailFishNumber):
             if done := self.l.split():
                 return done
-        if isinstance(self.r, SnailFishNumber):
-            if done := self.r.split():
-                return done
         if isinstance(self.l, Literal) and self.l.value >= 10:
             self.l = self.l.split()
             return True
+        if isinstance(self.r, SnailFishNumber):
+            if done := self.r.split():
+                return done
         if isinstance(self.r, Literal) and self.r.value >= 10:
             self.r = self.r.split()
             return True
@@ -175,22 +177,26 @@ class Literal(Element):
         return SnailFishNumber(Literal(left), Literal(right))
 
 
-def parse_snailfish_number(input_: deque[str]) -> Element:
+def parse_helper(input_: deque[str]) -> Element:
     c = input_.popleft()
     if c.isdigit():
         return Literal(int(c))
-    left = parse_snailfish_number(input_)
-    right = parse_snailfish_number(input_)
+    left = parse_helper(input_)
+    right = parse_helper(input_)
     return SnailFishNumber(left, right)
 
+def parse(input_: str) -> Element:
+    """Parses Snailfish Number."""
+    chars = re.findall(r'\[|\d', input_.strip())
+    snail_string = deque([c for c in chars])
+    return parse_helper(snail_string)
 
-def read_input(filepath: str) -> list[Element]:
+
+def read_input(filepath: str) -> list[str]:
     output = list()
     with open(filepath, 'r') as f:
         for line in f.readlines():
-            chars = re.findall(r'\[|\d', line.strip())
-            snail_string = deque([c for c in chars])
-            output.append(parse_snailfish_number(snail_string))
+            output.append(line.strip())
     return output
 
 
@@ -203,11 +209,20 @@ def init_parser() -> str:
 
 if __name__ == "__main__":
     path = init_parser()
-    numbers = read_input(path)
+    snailfish_strings = read_input(path)
 
+    numbers = [parse(n) for n in snailfish_strings]
     base = numbers[0]
     for sn in numbers[1:]:
         base = base.add(sn)
         base.reduce()
-        print(base, end="\n\n")
-    print(base.magnitude())
+    print(f"Part 1: {base.magnitude()}")
+
+    max_magnitude = 0
+    for n, m in permutations(snailfish_strings, 2):
+        x = parse(n)
+        y = parse(m)
+        sum_ = x.add(y)
+        sum_.reduce()
+        max_magnitude = max(sum_.magnitude(), max_magnitude)
+    print(f"Part 2: {max_magnitude}")
