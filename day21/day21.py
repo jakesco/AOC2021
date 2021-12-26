@@ -1,8 +1,9 @@
 import argparse
 import os
 
-from collections import deque
+from collections import deque, defaultdict
 from dataclasses import dataclass
+from itertools import product
 
 
 class Die:
@@ -51,19 +52,28 @@ def init_parser() -> str:
     return os.path.realpath(args.input[0])
 
 
+def part1(p1: Player, p2: Player) -> int:
+    die = Die()
+    while True:
+        p1.roll(die)
+        if p1.winner():
+            break
+        p2.roll(die)
+        if p2.winner():
+            break
+    loser = p1 if p2.winner() else p2
+    return loser.points * die.rolls
+
+
 if __name__ == "__main__":
     path = init_parser()
     player1, player2 = read_input(path)
 
-    die = Die()
+    print(f"Part 1: {part1(player1, player2)}")
 
-    while True:
-        player1.roll(die)
-        if player1.winner():
-            break
-        player2.roll(die)
-        if player2.winner():
-            break
+    rolls = dict()
+    for prod in product([1, 2, 3], repeat=3):
+        rolls[prod] = sum(prod)
 
-    loser = player1 if player2.winner() else player2
-    print(f"Part 1: {loser.points * die.rolls}")
+    # player1: 444356092776315
+    # player2: 341960390180808

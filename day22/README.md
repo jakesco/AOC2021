@@ -1,6 +1,6 @@
-# P
+# Day 22: Reactor Reboot
 
-[Day 19 Puzzle](https://adventofcode.com/2021/day/19)
+[Day 22 Puzzle](https://adventofcode.com/2021/day/22)
 
-+ Part 1: ``.
++ Part 1: `647062`.
 + Part 2: ``.
