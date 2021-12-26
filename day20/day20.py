@@ -59,7 +59,7 @@ def read_input(filepath: str) -> (list[int], Grid):
 
 
 def init_parser() -> str:
-    parser = argparse.ArgumentParser(description="Advent of Code day 17 solution.")
+    parser = argparse.ArgumentParser(description="Advent of Code day 20 solution.")
     parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
     args = parser.parse_args()
     return os.path.realpath(args.input[0])

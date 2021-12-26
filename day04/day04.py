@@ -91,7 +91,7 @@ def read_input(filepath: str) -> (list[int], list[Board]):
 
 
 def init_parser() -> str:
-    parser = argparse.ArgumentParser(description="Advent of Code day 2 solution.")
+    parser = argparse.ArgumentParser(description="Advent of Code day 4 solution.")
     parser.add_argument(
         "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
     )
