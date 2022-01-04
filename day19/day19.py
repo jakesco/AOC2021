@@ -10,24 +10,30 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class Beacon:
+class Point:
     x: int
     y: int
 
     def __repr__(self):
         return f"({self.x}, {self.y})"
 
+
+@dataclass(frozen=True)
+class Beacon(Point):
     def distance(self, other: 'Beacon') -> float:
         return sqrt((other.x - self.x) ** 2 + (other.y - self.y) ** 2)
 
 
-@dataclass(frozen=True)
+@dataclass
 class Scanner:
     id: int
+    pos: Point
     beacons: set[Beacon]
 
-    def distances(self) -> list[float]:
-        return [a.distance(b) for a, b in combinations(self.beacons, 2)]
+    def distances(self) -> dict[tuple[Beacon], float]:
+        return {(a, b): a.distance(b) for a, b in combinations(self.beacons, 2)}
+
+
 
 
 def read_input(filepath: str) -> list[Scanner]:
@@ -41,9 +47,9 @@ def read_input(filepath: str) -> list[Scanner]:
                 point = line.split(',')
                 beacons.add(Beacon(int(point[0]), int(point[1])))
             else:
-                output.append(Scanner(scanner, beacons))
+                output.append(Scanner(scanner, Point(0, 0), beacons))
                 scanner += 1
-        output.append(Scanner(scanner, beacons))
+        output.append(Scanner(scanner, Point(0, 0), beacons))
     return output
 
 
@@ -61,3 +67,6 @@ if __name__ == "__main__":
     for scanner in scanners:
         print(scanner)
         print(scanner.distances())
+
+    positions = {s.id: Point(0, 0) for s in scanners}
+    print(positions)

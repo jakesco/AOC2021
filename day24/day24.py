@@ -1,202 +1,74 @@
 import argparse
-import itertools
 import os
-import re
 
-from math import floor, ceil
-
-from abc import ABC, abstractmethod
 from collections import deque
-from itertools import permutations
-
 from dataclasses import dataclass
 
 
-class Element(ABC):
-
-    @abstractmethod
-    def _literals(self, acc) -> list['Literal']:
-        pass
-
-    @abstractmethod
-    def split(self):
-        pass
-
-    @abstractmethod
-    def add(self, other: 'Element'):
-        pass
-
-    @abstractmethod
-    def can_explode(self) -> bool:
-        pass
-
-    @abstractmethod
-    def can_split(self) -> bool:
-        pass
-
-    @abstractmethod
-    def magnitude(self) -> int:
-        pass
+@dataclass(frozen=True)
+class Instruction:
+    op: str
+    a: str
+    b: str | int
 
     @staticmethod
-    def get_literals(s: 'Element') -> list['Literal']:
-        acc = []
-        s._literals(acc)
-        return acc
+    def from_str(line: str) -> 'Instruction':
+        line = line.split()
+        if len(line) == 2:
+            return Instruction(line[0], line[1], '')
+
+        try:
+            b = int(line[-1])
+        except ValueError:
+            b = line[-1]
+        return Instruction(line[0], line[1], b)
 
 
-@dataclass
-class SnailFishNumber(Element):
-    l: Element
-    r: Element
-
-    def __repr__(self):
-        return f"[{self.l}, {self.r}]"
-
-    def _literals(self, acc):
-        self.l._literals(acc)
-        self.r._literals(acc)
-
-    def magnitude(self) -> int:
-        return 3 * self.l.magnitude() + 2 * self.r.magnitude()
-
-    def add(self, other: Element) -> 'SnailFishNumber':
-        result = SnailFishNumber(self, other)
-        # print(f"{self} + {other}")
-        # print(f"= {result}")
-        return SnailFishNumber(self, other)
-
-    def reduce(self):
-        """Reduces Snailfish number."""
-        explode = self.explode(0)
-        if explode is not None:
-            self.apply_explode(explode)
-
-        while self.can_split() or explode is not None:
-            # Do all explodes
-            while explode is not None:
-                explode = self.explode(0)
-                if explode is not None:
-                    self.apply_explode(explode)
-            # split
-            if not self.split():
-                continue
-
-            explode = self.explode(0)
-            if explode is not None:
-                self.apply_explode(explode)
-
-    def apply_explode(self, value: tuple[int, int]):
-        literals = Element.get_literals(self)
-        idx = literals.index(Literal(-1))
-        if idx - 1 >= 0:
-            literals[idx - 1].add(value[0])
-        if idx + 1 < len(literals):
-            literals[idx + 1].add(value[1])
-        literals[idx].add(1)
-
-    def explode(self, depth) -> tuple[int, int] | None:
-        """
-            Explodes left most explodeable value, returns (left,right) tuple
-            if explode happened else None. (left,right) tuple must be applied
-            via self.apply_explode before explode is complete.
-        """
-        # If a pair is nested in 4 pairs, the left pair explodes
-        if depth >= 3 and self.l.can_explode():
-            left = self.l.l.value
-            right = self.l.r.value
-            self.l = Literal(-1)
-            return (left, right)
-        if depth >= 3 and self.r.can_explode():
-            left = self.r.l.value
-            right = self.r.r.value
-            self.r = Literal(-1)
-            return (left, right)
-        if isinstance(self.l, SnailFishNumber):
-            done = self.l.explode(depth + 1)
-            if done is not None:
-                return done
-        if isinstance(self.r, SnailFishNumber):
-            done = self.r.explode(depth + 1)
-            if done is not None:
-                return done
-        return None
-
-    def can_explode(self) -> bool:
-        return isinstance(self.l, Literal) and isinstance(self.r, Literal)
-
-    def can_split(self) -> bool:
-        literals = Element.get_literals(self)
-        return any([l.value >= 10 for l in literals])
-
-    def split(self) -> bool:
-        """Splits left most splittable value, returns True if split was made."""
-        if isinstance(self.l, SnailFishNumber):
-            if done := self.l.split():
-                return done
-        if isinstance(self.l, Literal) and self.l.value >= 10:
-            self.l = self.l.split()
-            return True
-        if isinstance(self.r, SnailFishNumber):
-            if done := self.r.split():
-                return done
-        if isinstance(self.r, Literal) and self.r.value >= 10:
-            self.r = self.r.split()
-            return True
-        return False
-
-
-@dataclass
-class Literal(Element):
-    value: int
+class ALU:
+    def __init__(self):
+        self.registers: dict[str, int] = {'w': 0, 'x': 0, 'y': 0, 'z': 0}
 
     def __repr__(self):
-        return str(self.value)
+        return f"ALU(w={self.registers['w']}, x={self.registers['x']}, y={self.registers['y']}, z={self.registers['z']})"
 
-    def _literals(self, acc):
-        acc.append(self)
+    def __check_b(self, b: int | str):
+        return b if isinstance(b, int) else self.registers[b]
 
-    def magnitude(self) -> int:
-        return self.value
+    def inp(self, r: str, input_: deque[int]):
+        self.registers[r] = input_.popleft()
 
-    def can_explode(self) -> bool:
-        return False
+    def add(self, a: str, b: str | int):
+        self.registers[a] = self.registers[a] + self.__check_b(b)
 
-    def can_split(self) -> bool:
-        return self.value >= 10
+    def mul(self, a: str, b: str | int):
+        self.registers[a] = self.registers[a] * self.__check_b(b)
 
-    def add(self, val: int):
-        self.value += val
+    def div(self, a: str, b: str | int):
+        self.registers[a] = self.registers[a] // self.__check_b(b)
 
-    def split(self) -> Element:
-        if not self.can_split():
-            return self
-        half = self.value / 2
-        left = floor(half)
-        right = ceil(half)
-        return SnailFishNumber(Literal(left), Literal(right))
+    def mod(self, a: str, b: str | int):
+        self.registers[a] = self.registers[a] % self.__check_b(b)
+
+    def eql(self, a: str, b: str | int):
+        self.registers[a] = 1 if self.registers[a] == self.__check_b(b) else 0
 
 
-def parse_helper(input_: deque[str]) -> Element:
-    c = input_.popleft()
-    if c.isdigit():
-        return Literal(int(c))
-    left = parse_helper(input_)
-    right = parse_helper(input_)
-    return SnailFishNumber(left, right)
-
-def parse(input_: str) -> Element:
-    """Parses Snailfish Number."""
-    chars = re.findall(r'\[|\d', input_.strip())
-    snail_string = deque([c for c in chars])
-    return parse_helper(snail_string)
+def run(alu: ALU, program: list[Instruction], input_: deque[int]):
+    for op in program:
+        match op:
+            case Instruction('inp', a): alu.inp(a, input_)
+            case Instruction('add', a, b): alu.add(a, b)
+            case Instruction('mul', a, b): alu.mul(a, b)
+            case Instruction('div', a, b): alu.div(a, b)
+            case Instruction('mod', a, b): alu.mod(a, b)
+            case Instruction('eql', a, b): alu.eql(a, b)
 
 
-def read_input(filepath: str) -> list[str]:
+def read_input(filepath: str) -> list[Instruction]:
     output = list()
     with open(filepath, 'r') as f:
         for line in f.readlines():
-            output.append(line.strip())
+            output.append(Instruction.from_str(line.strip()))
     return output
 
 
@@ -209,20 +81,13 @@ def init_parser() -> str:
 
 if __name__ == "__main__":
     path = init_parser()
-    snailfish_strings = read_input(path)
+    program = read_input(path)
+    input_ = deque([5])
+    alu = ALU()
 
-    numbers = [parse(n) for n in snailfish_strings]
-    base = numbers[0]
-    for sn in numbers[1:]:
-        base = base.add(sn)
-        base.reduce()
-    print(f"Part 1: {base.magnitude()}")
+    print(alu)
+    run(alu, program, input_)
+    print(alu)
 
-    max_magnitude = 0
-    for n, m in permutations(snailfish_strings, 2):
-        x = parse(n)
-        y = parse(m)
-        sum_ = x.add(y)
-        sum_.reduce()
-        max_magnitude = max(sum_.magnitude(), max_magnitude)
-    print(f"Part 2: {max_magnitude}")
+
+
