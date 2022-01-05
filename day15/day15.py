@@ -1,18 +1,9 @@
 import argparse
 import os
-import sys
 
 from math import sqrt
 
-from pprint import pprint
 from dataclasses import dataclass
-from collections import deque
-
-
-def distance(x0: int, y0: int, x1: int, y1: int) -> float:
-    dx = x1 - x0
-    dy = y1 - y0
-    return sqrt(dx * dx + dy * dy)
 
 
 @dataclass(frozen=True)
@@ -20,95 +11,108 @@ class Node:
     x: int
     y: int
     risk: int
-    distance: float
     end: bool = False
 
-    def __repr__(self):
-        return f"Node(({self.x}, {self.y}), {self.risk})"
+    def __repr__(self) -> str:
+        return str(self.risk)
 
 
-class SearchWrapper:
-    def __init__(self, current: Node, previous, heuristic: int):
+class Path:
+    def __init__(self, current: Node, previous: list[Node], heuristic: float = 0):
         self.current = current
-        self.previous = previous
+        self.path = previous
         self.heuristic = heuristic
 
-    def get_path(self) -> list[Node]:
-        if self.previous:
-            return self.previous.get_path() + [self.current]
-        return [self.current]
-
     def __repr__(self):
-        return f"Search(({self.current.x}, {self.current.y}), {self.previous}, {self.heuristic})"
+        return f"Search(({self.current.x}, {self.current.y}), {len(self.path)}, {self.heuristic})"
+
+    @property
+    def risk(self):
+        return self.current.risk + sum([n.risk for n in self.path if not n.x == n.y == 0])
 
 
 class Graph:
-    def __init__(self):
-        self._nodes: list[Node] = list()
-        self._edges: dict[Node, set[Node]] = dict()
+    def __init__(self, grid: list[list[int]]):
+        self.rows = len(grid)
+        self.cols = len(grid[0])
+        self.__nodes = []
+        for r in range(self.rows):
+            for c in range(self.cols):
+                self.__nodes.append(
+                    Node(
+                        r,
+                        c,
+                        grid[r][c],
+                        r == self.rows -1 and c == self.cols - 1
+                    )
+                )
 
     def __str__(self):
+        output = [str(n) for n in self.__nodes]
+        for r in range(self.cols, len(self.__nodes), self.cols + 1):
+            output.insert(r, '\n')
+        return ''.join(output)
+
+    def render_path(self, path: Path):
         output = []
-        for k, v in self._edges.items():
-            output.append(f"{k} <-> {[n for n in v]}")
-        return '\n'.join(output)
+        for n in self.__nodes:
+            if n in path.path:
+                output.append('.')
+            elif n.end:
+                output.append('.')
+            else:
+                output.append(str(n))
+        for r in range(self.cols, len(self.__nodes), self.cols + 1):
+            output.insert(r, '\n')
+        print(''.join(output))
 
-    def render_path(self, path: list[Node], width: int):
-        string = list()
-        for i in range(len(self._nodes)):
-            if i % width == 0:
-                string.append("\n")
-            node = self._nodes[i]
-            string.append("." if node in path else str(node.risk))
-        print(''.join(string))
-
-    def add_node(self, node: Node):
-        self._nodes.append(node)
-        self._edges[node] = set()
-
-    def find_node(self, x: int, y: int) -> Node | None:
-        for node in self._nodes:
-            if node.x == x and node.y == y:
-                return node
+    def get(self, row: int, col: int) -> Node | None:
+        if (0 <= row < self.rows) and (0 <= col < self.cols):
+            return self.__nodes[row * self.cols + col]
         return None
 
-    def add_connection(self, parent: Node, child: Node):
-        self._edges[parent].add(child)
+    def neighbors(self, node: Node) -> list[Node]:
+        adj = [
+            self.get(node.x + i, node.y + j)
+            for i, j in [(1, 0), (0, 1), (-1, 0), (0, -1)]
+        ]
+        return [n for n in adj if n is not None]
 
-    def a_star(self, start: Node) -> SearchWrapper | None:
-        """Search for shortest path using A*"""
-        init = SearchWrapper(start, None, 0)
+    def dijkstra(self) -> Path | None:
+        """Search for shortest path using Dijkstra's shortest path."""
+        init = Path(self.__nodes[0], list())
         visited = set()
         q = [init]
-        while q:
-            sw = q.pop()
 
-            if sw.current in visited:
+        while q:
+            candidate = q.pop()
+
+            if candidate.current in visited:
                 continue
 
-            if sw.current.end:
-                return sw
+            if candidate.current.end:
+                return candidate
 
-            for node in [n for n in self._edges[sw.current] if n not in visited]:
-                hueristic = sw.heuristic + node.risk
-                new_path = SearchWrapper(node, sw, hueristic)
+            for node in self.neighbors(candidate.current):
+                if node in visited:
+                    continue
+
+                heuristic = candidate.heuristic + node.risk
+                previous = candidate.path.copy()
+                previous.append(candidate.current)
+                new_path = Path(node, previous, heuristic)
                 q.append(new_path)
 
-            visited.add(sw.current)
+            visited.add(candidate.current)
             q.sort(key=lambda p: p.heuristic, reverse=True)
 
         return None
-
-
-def calculate_risk(path: list[Node]) -> int:
-    return sum([n.risk for n in path if not (n.x == n.y == 0)])
 
 
 def read_input(filepath: str, *, expand: bool = False) -> Graph:
     map_ = list()
     with open(filepath, 'r') as f:
         if expand:
-            print("Building Map...")
             for line in f.readlines():
                 l = [int(n) for n in line.strip()]
                 out = l
@@ -126,34 +130,7 @@ def read_input(filepath: str, *, expand: bool = False) -> Graph:
         else:
             for line in f.readlines():
                 map_.append([int(n) for n in line.strip()])
-
-    g = Graph()
-    end_x = len(map_[0]) - 1
-    end_y = len(map_) - 1
-    end = Node(end_x, end_y, map_[end_y][end_x], 0, True)
-    # Add Nodes
-    for i in range(len(map_)):
-        for j in range(len(map_[0])):
-            if i == end_x and j == end_y:
-                node = end
-            else:
-                dist = distance(i, j, end_x, end_y)
-                node = Node(i, j, map_[i][j], dist)
-
-            g.add_node(node)
-    # Add Connections
-    for node in g._nodes:
-        for x, y in (
-                (node.x + 1, node.y),
-                (node.x - 1, node.y),
-                (node.x, node.y + 1),
-                (node.x, node.y - 1),
-        ):
-            if x < 0 or y < 0 or x > end_x or y > end_y:
-                continue
-            child = g.find_node(x, y)
-            g.add_connection(node, child)
-    return g
+    return Graph(map_)
 
 
 def init_parser() -> str:
@@ -165,16 +142,11 @@ def init_parser() -> str:
 
 if __name__ == "__main__":
     path = init_parser()
-    g = read_input(path, expand=True)
-    #g = read_input(path)
+    g_p1 = read_input(path)
+    g_p2 = read_input(path, expand=True)
 
-    start_node = g.find_node(0, 0)
-    search_result = g.a_star(start_node)
-    if not search_result:
-        sys.exit()
+    path1 = g_p1.dijkstra()
+    print(f"Part 1: {path1.risk}")
 
-    shortest_path = search_result.get_path()
-    # g.render_path(shortest_path, 500)
-    g.render_path(shortest_path, 50)
-    print(f"Risk: {calculate_risk(shortest_path)}")
-
+    path2 = g_p2.dijkstra()
+    print(f"Part 2: {path2.risk}")
