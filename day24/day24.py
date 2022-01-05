@@ -11,6 +11,9 @@ class Instruction:
     a: str
     b: str | int
 
+    def __repr__(self):
+        return f"{self.op} {self.a} {self.b}"
+
     @staticmethod
     def from_str(line: str) -> 'Instruction':
         line = line.split()
@@ -79,15 +82,14 @@ def init_parser() -> str:
     return os.path.realpath(args.input[0])
 
 
+def gen_input(model_number: int) -> deque[int]:
+    return deque([int(n) for n in str(model_number)])
+
+
 if __name__ == "__main__":
     path = init_parser()
     program = read_input(path)
-    input_ = deque([5])
+    model_num = 12345678999999
     alu = ALU()
-
+    run(alu, program, gen_input(model_num))
     print(alu)
-    run(alu, program, input_)
-    print(alu)
-
-
-
