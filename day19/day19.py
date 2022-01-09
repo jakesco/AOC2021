@@ -1,74 +1,82 @@
 import argparse
 import os
-import re
 
-from math import sqrt
-from itertools import combinations
+from math import sqrt, trunc
+from itertools import combinations, permutations
 from functools import reduce
 
 
 from dataclasses import dataclass
 
 
+ROOT_2_OVER_2 = sqrt(2) / 2
+
+
 @dataclass(frozen=True)
-class Vector:
+class Q:
+    w: float
     x: float
     y: float
     z: float
 
     def __repr__(self):
-        return f"({self.x}, {self.y}, {self.z})"
+        return f"Q({trunc(self.w)}, {trunc(self.x)}, {trunc(self.y)}, {trunc(self.z)})"
 
-    def add(self, other: 'Vector') -> 'Vector':
-        return Vector(self.x + other.x, self.y + other.y, self.z + other.z)
-
-    def sub(self, other: 'Vector') -> 'Vector':
-        return Vector(self.x - other.x, self.y - other.y, self.z - other.z)
-
-    def mul(self, scalar: float) -> 'Vector':
-        return Vector(self.x * scalar, self.y * scalar, self.x * scalar)
-
-    def div(self, scalar: float) -> 'Vector':
-        return Vector(self.x / scalar, self.y / scalar, self.x / scalar)
-
-
-@dataclass(frozen=True)
-class Rotation:
-    a: Vector
-    b: Vector
-    c: Vector
-
-    def apply(self, vec: Vector) -> Vector:
-        return Vector(
-            self.a.x * vec.x + self.a.y * vec.y + self.a.z * vec.z,
-            self.b.x * vec.x + self.b.y * vec.y + self.b.z * vec.z,
-            self.c.x * vec.x + self.c.y * vec.y + self.c.z * vec.z,
+    @property
+    def mag(self) -> float:
+        return sqrt(
+            reduce(lambda x, y: x + y ** 2, self.__dict__.values(), 0)
         )
 
+    def inv(self) -> 'Q':
+        return Q(self.w, -self.x, -self.y, -self.z)
 
-@dataclass(frozen=True)
-class Beacon(Vector):
-    def distance(self, other: 'Beacon') -> float:
-        return sqrt((other.x - self.x) ** 2 + (other.y - self.y) ** 2)
+    def add(self, other: 'Q') -> 'Q':
+        return Q(
+            self.w + other.w,
+            self.x + other.x,
+            self.y + other.y,
+            self.z + other.z,
+        )
+
+    def sub(self, other: 'Q') -> 'Q':
+        return Q(
+            self.w - other.w,
+            self.x - other.x,
+            self.y - other.y,
+            self.z - other.z,
+            )
+
+    def mul(self, other: 'Q') -> 'Q':
+        """Hamilton product"""
+        return Q(
+            self.w * other.w - self.x * other.x - self.y * other.y - self.z * other.z,
+            self.w * other.x + self.x * other.w + self.y * other.z - self.z * other.y,
+            self.w * other.y - self.x * other.z + self.y * other.w + self.z * other.x,
+            self.w * other.z + self.x * other.y - self.y * other.x + self.z * other.w,
+        )
+
+    def rot(self, rotation: 'Q') -> 'Q':
+        return rotation.mul(self).mul(rotation.inv())
 
 
 @dataclass(frozen=True)
 class Scanner:
     id: int
-    beacons: set[Beacon]
+    beacons: set[Q]
 
     @property
-    def distances(self) -> dict[tuple[Beacon], float]:
+    def distances(self) -> dict[tuple[Q], float]:
         """Calculates the distances of all the beacons from each other."""
         return {(a, b): a.distance(b) for a, b in combinations(self.beacons, 2)}
 
 
-def centroid(beacons: set[Vector]) -> Vector:
+def centroid(beacons: set[Q]) -> Q:
     """Calculates the centroid of beacons."""
     return reduce(lambda x, y: x.add(y), beacons).div(len(beacons))
 
 
-def translation(s0: Scanner, s1: Scanner) -> Vector | None:
+def translation(s0: Scanner, s1: Scanner) -> Q | None:
     """
     Returns a translation vector to move scanner 0 to scanner 1.
     This requires at least 12 beacons are known to overlap.
@@ -77,12 +85,17 @@ def translation(s0: Scanner, s1: Scanner) -> Vector | None:
     y = centroid(s1.beacons)
     return x.sub(y)
 
-def rotation(s0: Scanner, s1: Scanner) -> Rotation:
+def rotation(s0: Scanner, s1: Scanner) -> Q:
     """
     Returns a rotation matrix to align scanner 0 to scanner 1.
     This requires at least 12 beacons are known to overlap.
     """
     pass
+
+
+def generate_rotations() -> set[Q]:
+    pass
+
 
 def read_input(filepath: str) -> list[Scanner]:
     output = list()
@@ -93,7 +106,7 @@ def read_input(filepath: str) -> list[Scanner]:
                 beacons = set()
             elif line != '':
                 point = line.split(',')
-                beacons.add(Beacon(int(point[0]), int(point[1]), 0))
+                beacons.add(Q(0, int(point[0]), int(point[1]), int(point[2])))
             else:
                 output.append(Scanner(scanner, beacons))
                 scanner += 1
@@ -113,8 +126,9 @@ if __name__ == "__main__":
     scanners = read_input(path)
     origin = scanners[0]
 
-    rot = Rotation(Vector(0, -1, 0), Vector(1, 0, 0), Vector(0, 0, 1))
-    rot2 = Rotation(Vector(0, -1, 0), Vector(1, 0, 0), Vector(0, 0, 1))
-    vec = Vector(1, 0, 0)
-    print(vec)
-    print(rot.apply(vec))
+    ROT_90 = Q(ROOT_2_OVER_2, ROOT_2_OVER_2, 0, 0)
+
+    for beacon in origin.beacons:
+        print(f"Original: {beacon}")
+        print(f"Rotate (90, 0, 0): {beacon.rot(ROT_90)}")
+
