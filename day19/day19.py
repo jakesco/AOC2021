@@ -2,31 +2,40 @@ import argparse
 import os
 
 from math import sqrt, trunc
+from decimal import Decimal
 from itertools import combinations, permutations
 from functools import reduce
+from collections import Counter
 
 
 from dataclasses import dataclass
 
 
-ROOT_2_OVER_2 = sqrt(2) / 2
+PRECISION = Decimal('1.00')
 
 
 @dataclass(frozen=True)
 class Q:
-    w: float
-    x: float
-    y: float
-    z: float
+    w: Decimal
+    x: Decimal
+    y: Decimal
+    z: Decimal
 
     def __repr__(self):
-        return f"Q({trunc(self.w)}, {trunc(self.x)}, {trunc(self.y)}, {trunc(self.z)})"
+        return f"Q({self.w}, {self.x}, {self.y}, {self.z})"
+
+    @staticmethod
+    def from_tuple(t: tuple):
+        return Q(
+            Decimal(t[0]),
+            Decimal(t[1]),
+            Decimal(t[2]),
+            Decimal(t[3]),
+        )
 
     @property
-    def mag(self) -> float:
-        return sqrt(
-            reduce(lambda x, y: x + y ** 2, self.__dict__.values(), 0)
-        )
+    def mag(self) -> Decimal:
+        return reduce(lambda x, y: x + y ** 2, self.__dict__.values(), Decimal(0)).sqrt()
 
     def inv(self) -> 'Q':
         return Q(self.w, -self.x, -self.y, -self.z)
@@ -47,6 +56,14 @@ class Q:
             self.z - other.z,
             )
 
+    def div(self, scalar: Decimal) -> 'Q':
+        return Q(
+            self.w / scalar,
+            self.x / scalar,
+            self.y / scalar,
+            self.z / scalar,
+            )
+
     def mul(self, other: 'Q') -> 'Q':
         """Hamilton product"""
         return Q(
@@ -56,8 +73,25 @@ class Q:
             self.w * other.z + self.x * other.y - self.y * other.x + self.z * other.w,
         )
 
-    def rot(self, rotation: 'Q') -> 'Q':
-        return rotation.mul(self).mul(rotation.inv())
+    def apply_rotation(self, rotation: 'Q') -> 'Q':
+        return rotation.mul(self).mul(rotation.inv()).quantize(PRECISION)
+
+    def quantize(self, *args, **kwargs) -> 'Q':
+        return Q(
+            self.w.quantize(*args, **kwargs),
+            self.x.quantize(*args, **kwargs),
+            self.y.quantize(*args, **kwargs),
+            self.z.quantize(*args, **kwargs),
+        )
+
+    def normalize(self) -> 'Q':
+        mag = self.mag
+        return Q(
+            self.w / mag,
+            self.x / mag,
+            self.y / mag,
+            self.z / mag,
+            )
 
 
 @dataclass(frozen=True)
@@ -73,28 +107,19 @@ class Scanner:
 
 def centroid(beacons: set[Q]) -> Q:
     """Calculates the centroid of beacons."""
-    return reduce(lambda x, y: x.add(y), beacons).div(len(beacons))
+    return reduce(lambda x, y: x.add(y), beacons).div(Decimal(len(beacons)))
 
 
-def translation(s0: Scanner, s1: Scanner) -> Q | None:
-    """
-    Returns a translation vector to move scanner 0 to scanner 1.
-    This requires at least 12 beacons are known to overlap.
-    """
-    x = centroid(s0.beacons)
-    y = centroid(s1.beacons)
-    return x.sub(y)
-
-def rotation(s0: Scanner, s1: Scanner) -> Q:
-    """
-    Returns a rotation matrix to align scanner 0 to scanner 1.
-    This requires at least 12 beacons are known to overlap.
-    """
-    pass
+def rotate(beacons: set[Q], rotation: Q) -> set[Q]:
+    return {b.apply_rotation(rotation) for b in beacons}
 
 
-def generate_rotations() -> set[Q]:
-    pass
+def translate(beacons: set[Q], translation: Q) -> set[Q]:
+    return {b.add(translation) for b in beacons}
+
+
+def cal_translation(q0: Q, q1: Q) -> Q:
+    return q0.sub(q1)
 
 
 def read_input(filepath: str) -> list[Scanner]:
@@ -106,7 +131,7 @@ def read_input(filepath: str) -> list[Scanner]:
                 beacons = set()
             elif line != '':
                 point = line.split(',')
-                beacons.add(Q(0, int(point[0]), int(point[1]), int(point[2])))
+                beacons.add(Q.from_tuple((0, float(point[0]), float(point[1]), float(point[2]))).quantize(PRECISION))
             else:
                 output.append(Scanner(scanner, beacons))
                 scanner += 1
@@ -122,13 +147,65 @@ def init_parser() -> str:
 
 
 if __name__ == "__main__":
+    ROOT_2_OVER_2 = Decimal(2).sqrt() / 2
+    X_90 = Q.from_tuple((ROOT_2_OVER_2, ROOT_2_OVER_2, 0, 0))
+    Y_90 = Q.from_tuple((ROOT_2_OVER_2, 0, ROOT_2_OVER_2, 0))
+    Z_90 = Q.from_tuple((ROOT_2_OVER_2, 0, 0, ROOT_2_OVER_2))
+    UNIQUE_ROTATIONS = {
+        'I': Q.from_tuple((1, 0, 0, 0)),
+        'X': X_90,
+        'Y': Y_90,
+        'Z': Z_90,
+        'XX': X_90.mul(X_90),
+        'XY': X_90.mul(Y_90),
+        'XZ': X_90.mul(Z_90),
+        'YX': Y_90.mul(X_90),
+        'YY': Y_90.mul(Y_90),
+        'ZY': Z_90.mul(Y_90),
+        'ZZ': Z_90.mul(Z_90),
+        'XXX': X_90.mul(X_90).mul(X_90),
+        'XXY': X_90.mul(X_90).mul(Y_90),
+        'XXZ': X_90.mul(X_90).mul(Z_90),
+        'XYX': X_90.mul(Y_90).mul(X_90),
+        'XYY': X_90.mul(Y_90).mul(Y_90),
+        'XZZ': X_90.mul(Z_90).mul(Z_90),
+        'YXX': Y_90.mul(X_90).mul(X_90),
+        'YYY': Y_90.mul(Y_90).mul(Y_90),
+        'ZZZ': Z_90.mul(Z_90).mul(Z_90),
+        'XXXY': X_90.mul(X_90).mul(X_90).mul(Y_90),
+        'XXYX': X_90.mul(X_90).mul(Y_90).mul(X_90),
+        'XYXX': X_90.mul(Y_90).mul(X_90).mul(X_90),
+        'XYYY': X_90.mul(Y_90).mul(Y_90).mul(Y_90),
+    }
+
     path = init_parser()
     scanners = read_input(path)
     origin = scanners[0]
+    scanner = scanners[1]
 
-    ROT_90 = Q(ROOT_2_OVER_2, ROOT_2_OVER_2, 0, 0)
+    # Test 4, 10 beacons
+    orientations = dict()
+    for scanner in scanners:
+        best = ("", 0, Q.from_tuple((0, 0, 0, 0)), Q.from_tuple((0, 0, 0, 0)))
+        for label, rot in UNIQUE_ROTATIONS.items():
+            r = rotate(scanner.beacons, rot)
+            c = Counter()
+            for beacon in r:
+                c += Counter([cal_translation(o, beacon) for o in origin.beacons])
+            most_common = c.most_common(1)[0]
+            if most_common[1] > best[1]:
+                best = (label, most_common[1], rot, most_common[0])
+        orientations[scanner.id] = (best[2], best[3])
 
-    for beacon in origin.beacons:
-        print(f"Original: {beacon}")
-        print(f"Rotate (90, 0, 0): {beacon.rot(ROT_90)}")
+    new_sets = [origin.beacons]
+    for scanner in scanners[1:]:
+        transform = orientations[scanner.id]
+        new_sets.append(translate(rotate(scanner.beacons, transform[0]), transform[1]))
+
+    unique_beacons = reduce(lambda a, b: a.union(b), new_sets)
+
+    print(len(unique_beacons))
+
+
+
 
