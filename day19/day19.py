@@ -10,6 +10,8 @@ from collections import Counter
 
 from dataclasses import dataclass
 
+from pprint import pprint
+
 
 PRECISION = Decimal('1.00')
 
@@ -116,9 +118,6 @@ class Scanner:
         """Calculates the distances of all the beacons from each other."""
         return {a.distance(b) for a, b in combinations(self.beacons, 2)}
 
-    def apply_transform(self, o: Orientation) -> set[Q]:
-        return translate(rotate(self.beacons, o.rotation), o.translation)
-
 
 def centroid(beacons: set[Q]) -> Q:
     """Calculates the centroid of beacons."""
@@ -133,6 +132,10 @@ def translate(beacons: set[Q], translation: Q) -> set[Q]:
     return {b.add(translation) for b in beacons}
 
 
+def transform(beacons: set[Q], orientation: Orientation) -> set[Q]:
+    return translate(rotate(beacons, orientation.rotation), orientation.translation)
+
+
 def cal_translation(q0: Q, q1: Q) -> Q:
     return q0.sub(q1)
 
@@ -144,6 +147,7 @@ def find_best_match(scanner: Scanner, scanners: list[Scanner]) -> int:
     for s in scanners:
         if s == scanner:
             continue
+
         dist2 = s.distances
         common = len(dist1.intersection(dist2))
         if common > best[1]:
@@ -151,18 +155,42 @@ def find_best_match(scanner: Scanner, scanners: list[Scanner]) -> int:
     return best[0]
 
 
-def find_orientation(scanner: Scanner, scanners: list[Scanner]) -> Orientation:
-    most_overlap = scanners[find_best_match(scanner, scanners)]
+def find_orientation(scanner0: Scanner, scanner1: Scanner) -> Orientation:
     best_transform = ("", 0, Orientation())
     for label, rot in UNIQUE_ROTATIONS.items():
-        r = rotate(scanner.beacons, rot)
+        r = rotate(scanner0.beacons, rot)
         c = Counter()
         for beacon in r:
-            c += Counter([cal_translation(o, beacon) for o in most_overlap.beacons])
+            c += Counter([cal_translation(o, beacon) for o in scanner1.beacons])
         most_common = c.most_common(1)[0]
         if most_common[1] > best_transform[1]:
             best_transform = (label, most_common[1], Orientation(most_common[0], rot))
     return best_transform[2]
+
+
+def deduplicate_beacons(scanners: list[Scanner]) -> set[Q]:
+    overlap_map = dict()
+    for scanner in scanners[1:]:
+        overlap_map[scanner.id] = find_best_match(scanner, scanners)
+
+    transform_map = dict()
+    for scanner in scanners[1:]:
+        transform_map[scanner.id] = find_orientation(scanner, scanners[overlap_map[scanner.id]])
+
+    pprint(overlap_map)
+
+    new_sets = [origin.beacons]
+    for scanner in scanners[1:]:
+        t = transform(scanner.beacons, transform_map[scanner.id])
+        next = overlap_map[scanner.id]
+        while next != 0:
+            t = transform(t, transform_map[next])
+            next = overlap_map[next]
+        new_sets.append(t)
+
+    unique_beacons = reduce(lambda a, b: a.union(b), new_sets)
+
+    return unique_beacons
 
 
 def read_input(filepath: str) -> list[Scanner]:
@@ -226,17 +254,7 @@ if __name__ == "__main__":
     origin = scanners[0]
     scanner = scanners[1]
 
-    orientations = dict()
-    for scanner in scanners:
-        orientations[scanner.id] = find_orientation(scanner, scanners)
-    print(orientations)
-
-    new_sets = [origin.beacons]
-    for scanner in scanners[1:]:
-        transform = orientations[scanner.id]
-        new_sets.append(scanner.apply_transform(transform))
-
-    unique_beacons = reduce(lambda a, b: a.union(b), new_sets)
+    unique_beacons = deduplicate_beacons(scanners)
 
     print(f"Part 1: {len(unique_beacons)}")
 
