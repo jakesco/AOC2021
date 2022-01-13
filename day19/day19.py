@@ -93,6 +93,18 @@ class Q:
             self.z / mag,
             )
 
+    def distance(self, other: 'Q') -> Decimal:
+        dx = other.x - self.x
+        dy = other.y - self.y
+        dz = other.z - self.z
+        return (dx ** 2 + dy ** 2 + dz ** 2).sqrt()
+
+
+@dataclass(frozen=True)
+class Orientation:
+    translation: Q = Q.from_tuple((0, 0, 0, 0))
+    rotation: Q = Q.from_tuple((0, 0, 0, 0))
+
 
 @dataclass(frozen=True)
 class Scanner:
@@ -100,9 +112,12 @@ class Scanner:
     beacons: set[Q]
 
     @property
-    def distances(self) -> dict[tuple[Q], float]:
+    def distances(self) -> set[Decimal]:
         """Calculates the distances of all the beacons from each other."""
-        return {(a, b): a.distance(b) for a, b in combinations(self.beacons, 2)}
+        return {a.distance(b) for a, b in combinations(self.beacons, 2)}
+
+    def apply_transform(self, o: Orientation) -> set[Q]:
+        return translate(rotate(self.beacons, o.rotation), o.translation)
 
 
 def centroid(beacons: set[Q]) -> Q:
@@ -120,6 +135,34 @@ def translate(beacons: set[Q], translation: Q) -> set[Q]:
 
 def cal_translation(q0: Q, q1: Q) -> Q:
     return q0.sub(q1)
+
+
+def find_best_match(scanner: Scanner, scanners: list[Scanner]) -> int:
+    """Returns index of best matching scanner."""
+    dist1 = scanner.distances
+    best = (scanner.id, 0)
+    for s in scanners:
+        if s == scanner:
+            continue
+        dist2 = s.distances
+        common = len(dist1.intersection(dist2))
+        if common > best[1]:
+            best = (s.id, common)
+    return best[0]
+
+
+def find_orientation(scanner: Scanner, scanners: list[Scanner]) -> Orientation:
+    most_overlap = scanners[find_best_match(scanner, scanners)]
+    best_transform = ("", 0, Orientation())
+    for label, rot in UNIQUE_ROTATIONS.items():
+        r = rotate(scanner.beacons, rot)
+        c = Counter()
+        for beacon in r:
+            c += Counter([cal_translation(o, beacon) for o in most_overlap.beacons])
+        most_common = c.most_common(1)[0]
+        if most_common[1] > best_transform[1]:
+            best_transform = (label, most_common[1], Orientation(most_common[0], rot))
+    return best_transform[2]
 
 
 def read_input(filepath: str) -> list[Scanner]:
@@ -183,28 +226,19 @@ if __name__ == "__main__":
     origin = scanners[0]
     scanner = scanners[1]
 
-    # Test 4, 10 beacons
     orientations = dict()
     for scanner in scanners:
-        best = ("", 0, Q.from_tuple((0, 0, 0, 0)), Q.from_tuple((0, 0, 0, 0)))
-        for label, rot in UNIQUE_ROTATIONS.items():
-            r = rotate(scanner.beacons, rot)
-            c = Counter()
-            for beacon in r:
-                c += Counter([cal_translation(o, beacon) for o in origin.beacons])
-            most_common = c.most_common(1)[0]
-            if most_common[1] > best[1]:
-                best = (label, most_common[1], rot, most_common[0])
-        orientations[scanner.id] = (best[2], best[3])
+        orientations[scanner.id] = find_orientation(scanner, scanners)
+    print(orientations)
 
     new_sets = [origin.beacons]
     for scanner in scanners[1:]:
         transform = orientations[scanner.id]
-        new_sets.append(translate(rotate(scanner.beacons, transform[0]), transform[1]))
+        new_sets.append(scanner.apply_transform(transform))
 
     unique_beacons = reduce(lambda a, b: a.union(b), new_sets)
 
-    print(len(unique_beacons))
+    print(f"Part 1: {len(unique_beacons)}")
 
 
 
