@@ -10,6 +10,7 @@ class Grid:
     w: int
     h: int
     __grid: list[str]
+    background: str = '0'
 
     def __repr__(self):
         string = ['.' if x == '0' else '#' for x in self.__grid]
@@ -21,26 +22,29 @@ class Grid:
     def lit(self):
         return len([x for x in self.__grid if x == '1'])
 
-    def get(self, row: int, col: int, *, default: str = '0') -> str:
+    def flip_background(self):
+        self.background = '0' if self.background == '1' else '1'
+
+    def get(self, row: int, col: int) -> str:
         idx = row * self.w + col
         if not (0 <= row < self.h and 0 <= col < self.w):
-            return default
+            return self.background
         return self.__grid[idx]
 
-    def convolve(self, row: int, col: int, algorithm: list[str], *, default: str = '0') -> str:
+    def convolve(self, row: int, col: int, algorithm: list[str]) -> str:
         idx = list()
         for i, j in product([-1, 0, 1], repeat=2):
-            idx.append(self.get(row + i, col + j, default=default))
+            idx.append(self.get(row + i, col + j))
         idx = int(''.join(idx), 2)
         return algorithm[idx]
 
 
-def enhance(grid: Grid, algorithm: list[str], *, default: str = '0') -> Grid:
+def enhance(grid: Grid, algorithm: list[str]) -> Grid:
     enhanced_map = list()
     for i in range(-1, grid.h + 1):
         for j in range(-1, grid.w + 1):
-            enhanced_map.append(grid.convolve(i, j, algorithm, default=default))
-    return Grid(grid.w + 2, grid.h + 2, enhanced_map)
+            enhanced_map.append(grid.convolve(i, j, algorithm))
+    return Grid(grid.w + 2, grid.h + 2, enhanced_map, background=grid.background)
 
 
 def read_input(filepath: str) -> (list[int], Grid):
@@ -68,17 +72,20 @@ def init_parser() -> str:
 if __name__ == "__main__":
     path = init_parser()
     algo, grid = read_input(path)
+    flip = algo[0] == '1'
 
     steps = 2
     for i in range(steps):
-        # default = '0' if i % 2 == 0 else '1'
         grid = enhance(grid, algo)
+        if flip:
+            grid.flip_background()
     print(f"Part 1: {grid.lit}")
 
-    steps = 50
+    steps = 48
     for i in range(steps):
-        # default = '0' if i % 2 == 0 else '1'
         grid = enhance(grid, algo)
+        if flip:
+            grid.flip_background()
     print(f"Part 2: {grid.lit}")
 
 
