@@ -78,6 +78,7 @@ class Scanner:
     beacons: set[Beacon]
     match: 'Scanner' = None
     orientation: Orientation = Orientation()
+    center = Beacon()
 
     def __repr__(self):
         return f"Scanner(id={self.id}, match={self.match.id if self.match else 'None'}, o={self.orientation})"
@@ -105,8 +106,8 @@ def mdistance(b0: Beacon, b1: Beacon) -> int:
 
 
 def mdistance_between_scanners(s0: Scanner, s1: Scanner) -> int:
-    b0 = s0.orientation.translation
-    b1 = s1.orientation.translation
+    b0 = s0.center
+    b1 = s1.center
     return mdistance(b0, b1)
 
 
@@ -158,17 +159,16 @@ def match_scanners(s: Scanner):
 
 def scanner_to_origin(s: Scanner) -> set[Beacon]:
     beacons = transform_beacons(s.beacons, s.orientation)
+    center = transform_beacons({s.center}, s.orientation)
     next_ = s.match
     while next_:
         if next_.match is None:
             break
         beacons = transform_beacons(beacons, next_.orientation)
+        center = transform_beacons(center, next_.orientation)
         next_ = next_.match
+    s.center = center.pop()
     return beacons
-
-
-def calculate_absolute_position(s: Scanner) -> Beacon:
-    return Beacon()
 
 
 def read_input(filepath: str) -> list[Scanner]:
@@ -202,13 +202,11 @@ if __name__ == "__main__":
     match_overlaping_scanner(scanners)
     [match_scanners(s) for s in scanners]
 
-    pprint(scanners)
-
     unique = reduce(lambda a, b: a.union(b), [scanner_to_origin(s) for s in scanners], set())
-    print(f"Part 1: {len(unique)}(79)")
+    print(f"Part 1: {len(unique)}")
 
-    for x, y in combinations(scanners, 2):
-        print(f"{x.id} to {y.id}: {mdistance_between_scanners(x, y)}")
+    distances = [mdistance_between_scanners(x, y) for x, y in combinations(scanners, 2)]
+    print(f"Part 2: {max(distances)}")
 
 
 
