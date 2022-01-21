@@ -3,11 +3,12 @@ import os
 
 from collections import deque
 from dataclasses import dataclass
-from itertools import permutations
+from itertools import product
+from functools import cache
 
-DIRAC = {3: 1, 4: 3, 5: 6, 6: 7, 7: 6, 8: 3, 9: 1}
 
-ROLL_COMBOS = list(permutations(DIRAC.keys(), 2))
+DIRAC_ROLL_COMBOS = [sum(r) for r in product((1, 2, 3), repeat=3)]
+
 
 class Die:
     def __init__(self):
@@ -25,46 +26,59 @@ class Die:
         return self.__gen.popleft()
 
 
-@dataclass
+@dataclass(frozen=True)
 class Player:
     position: int
     points: int = 0
 
-    def roll(self, die: Die):
-        move = 0
-        for i in range(3):
-            move += die.roll()
-        self.position = ((self.position - 1 + move) % 10) + 1
-        self.points += self.position
 
-    def winner(self) -> bool:
-        return self.points >= 1000
+def calc_position(player: Player, move: int) -> int:
+    return ((player.position - 1 + move) % 10) + 1
 
 
-@dataclass(frozen=True)
-class Game:
-    p1_pos: int
-    p2_pos: int
-    p1_score: int = 0
-    p2_score: int = 0
-    universes: int = 0
-
-    @property
-    def winner(self) -> int:
-        if self.p1_score >= 21:
-            return 1
-        if self.p2_score >= 21:
-            return 2
-        return 0
+def roll(player: Player, die: Die) -> Player:
+    move = 0
+    for i in range(3):
+        move += die.roll()
+    new_position = calc_position(player, move)
+    return Player(new_position, player.points + new_position)
 
 
-def roll(game: Game, p1_roll: int, p2_roll: int) -> Game:
-    p1_pos = ((game.p1_pos - 1 + p1_roll) % 10) + 1
-    p2_pos = ((game.p2_pos - 1 + p2_roll) % 10) + 1
-    p1_score = game.p1_score + game.p1_pos
-    p2_score = game.p2_score + game.p2_pos
-    universes = game.universes + DIRAC[p1_roll] + DIRAC[p2_roll]
-    return Game(p1_pos, p2_pos, p1_score, p2_score, universes)
+def winner(player: Player) -> bool:
+    return player.points >= 1000
+
+
+def part1(p1: Player, p2: Player) -> int:
+    die = Die()
+    while True:
+        p1 = roll(p1, die)
+        if winner(p1):
+            break
+        p2 = roll(p2, die)
+        if winner(p2):
+            break
+    loser = p1 if winner(p2) else p2
+    return loser.points * die.rolls
+
+
+def simulate_turn(player: Player, move: int) -> Player:
+    new_position = calc_position(player, move)
+    new_score = player.points + new_position
+    return Player(new_position, new_score)
+
+
+@cache
+def part2(p1: Player, p2: Player) -> dict[int, int]:
+    wins = {1: 0, 2: 0}
+    for dirac_roll in DIRAC_ROLL_COMBOS:
+        next_p1 = simulate_turn(p1, dirac_roll)
+        if next_p1.points >= 21:
+            wins[1] += 1
+        else:
+            next_turn = part2(p2, next_p1)
+            wins[1] += next_turn[2]
+            wins[2] += next_turn[1]
+    return wins
 
 
 def read_input(filepath: str) -> (Player, Player):
@@ -81,35 +95,6 @@ def init_parser() -> str:
     return os.path.realpath(args.input[0])
 
 
-def part1(p1: Player, p2: Player) -> int:
-    die = Die()
-    while True:
-        p1.roll(die)
-        if p1.winner():
-            break
-        p2.roll(die)
-        if p2.winner():
-            break
-    loser = p1 if p2.winner() else p2
-    return loser.points * die.rolls
-
-
-def part2(p1: Player, p2: Player) -> dict[int, int]:
-    wins = {1: 0, 2: 0}
-    q = deque([Game(p1.position, p2.position)])
-
-    while q:
-        game = q.popleft()
-        for p1_roll, p2_roll in ROLL_COMBOS:
-            new_game = roll(game, p1_roll, p2_roll)
-            if (w := new_game.winner) != 0:
-                wins[w] += game.universes
-            else:
-                q.append(new_game)
-
-    return wins
-
-
 if __name__ == "__main__":
     path = init_parser()
     player1, player2 = read_input(path)
@@ -117,6 +102,4 @@ if __name__ == "__main__":
     print(f"Part 1: {part1(player1, player2)}")
 
     wins = part2(player1, player2)
-    print(f"Part 2: p1={wins[1]}, p2={wins[2]}")
-    # player1: 444356092776315
-    # player2: 341960390180808
+    print(f"Part 2: {max(wins[1], wins[2])}")
