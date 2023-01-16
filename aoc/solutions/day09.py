@@ -1,10 +1,8 @@
 import argparse
 import os
-
 from dataclasses import dataclass
-
-from queue import Queue
 from functools import reduce
+from queue import Queue
 
 
 class Map:
@@ -24,10 +22,10 @@ class Map:
     def is_local_min(self, row: int, col: int) -> bool:
         val = self.elm(row, col)
         return (
-                val < self.elm(row + 1, col)
-                and val < self.elm(row - 1, col)
-                and val < self.elm(row, col + 1)
-                and val < self.elm(row, col - 1)
+            val < self.elm(row + 1, col)
+            and val < self.elm(row - 1, col)
+            and val < self.elm(row, col + 1)
+            and val < self.elm(row, col - 1)
         )
 
     def get_local_mins(self) -> list[(int, int)]:
@@ -77,7 +75,7 @@ class Graph:
                 if candidate and candidate.val < 9:
                     neighbors.add(candidate)
 
-    def find_node(self, x: int, y: int) -> Node|None:
+    def find_node(self, x: int, y: int) -> Node | None:
         for n in self.nodes.keys():
             if n.x == x and n.y == y:
                 return n
@@ -114,7 +112,7 @@ def calculate_risk(map_: Map) -> int:
 
 def read_input(filepath: str):
     map_ = []
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         for line in f.readlines():
             map_.append([int(n) for n in line.rstrip()])
     return Map(map_)
@@ -122,7 +120,9 @@ def read_input(filepath: str):
 
 def init_parser() -> str:
     parser = argparse.ArgumentParser(description="Advent of Code day 9 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    parser.add_argument(
+        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
+    )
     args = parser.parse_args()
     return os.path.realpath(args.input[0])
 
@@ -142,8 +142,5 @@ if __name__ == "__main__":
     print(f"Part 2: size = {product}")
 
 
-
-
-
-
-def main(_): raise NotImplementedError
+def main(_):
+    raise NotImplementedError

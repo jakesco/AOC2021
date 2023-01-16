@@ -1,7 +1,6 @@
 import argparse
 import os
 import uuid
-
 from collections import deque
 from dataclasses import dataclass, field
 
@@ -10,9 +9,7 @@ from dataclasses import dataclass, field
 class Octopus:
     energy: int
     flashed: bool = False
-    __id: str = field(
-        default_factory=uuid.uuid4
-    )
+    __id: str = field(default_factory=uuid.uuid4)
 
     def __hash__(self):
         return hash(self.__id)
@@ -79,8 +76,8 @@ class Graph:
         length = 10
         output = [str(o.energy) for o in self.nodes.keys()]
         for i in range(length, len(output) + 1, length + 1):
-            output.insert(i, '\n')
-        return ''.join(output)
+            output.insert(i, "\n")
+        return "".join(output)
 
 
 def find_neighbors(center: (int, int), grid: list[list[Octopus]]) -> set[Octopus]:
@@ -101,7 +98,7 @@ def find_neighbors(center: (int, int), grid: list[list[Octopus]]) -> set[Octopus
 
 def read_input(filepath: str) -> Graph:
     grid = list()
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         for line in f.readlines():
             grid.append([Octopus(int(n)) for n in line.rstrip()])
 
@@ -120,7 +117,9 @@ def read_input(filepath: str) -> Graph:
 
 def init_parser() -> str:
     parser = argparse.ArgumentParser(description="Advent of Code day 11 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    parser.add_argument(
+        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
+    )
     args = parser.parse_args()
     return os.path.realpath(args.input[0])
 
@@ -140,4 +139,6 @@ if __name__ == "__main__":
 
     print(f"Part 1 flashes: {flashes}")
 
-def main(_): raise NotImplementedError
+
+def main(_):
+    raise NotImplementedError

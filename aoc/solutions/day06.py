@@ -1,7 +1,6 @@
 import argparse
 import os
 from collections import deque
-
 from dataclasses import dataclass
 
 
@@ -36,13 +35,15 @@ class Population:
 
 
 def read_input(filepath: str) -> list[int]:
-    with open(filepath, 'r') as f:
-        return [int(n) for n in f.readline().split(',')]
+    with open(filepath, "r") as f:
+        return [int(n) for n in f.readline().split(",")]
 
 
 def init_parser() -> str:
     parser = argparse.ArgumentParser(description="Advent of Code day 6 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    parser.add_argument(
+        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
+    )
     args = parser.parse_args()
     return os.path.realpath(args.input[0])
 
@@ -60,6 +61,5 @@ if __name__ == "__main__":
     print(f"\nFish count after {days} day(s): {pop.size}")
 
 
-
-
-def main(_): raise NotImplementedError
+def main(_):
+    raise NotImplementedError

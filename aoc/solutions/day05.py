@@ -1,8 +1,8 @@
 import argparse
-import os
 import math
-
+import os
 from dataclasses import dataclass
+
 
 @dataclass
 class Point:
@@ -59,25 +59,24 @@ class Map:
     def overlaps(self):
         return len([x for x in self.map_ if x >= 2])
 
-
     def __str__(self):
         strings = [str(x) for x in self.map_]
         output = []
         for i in range(0, self.size * self.size, self.size):
-            output.append(' '.join(strings[i: i + self.size]))
-        return '\n'.join(output)
+            output.append(" ".join(strings[i : i + self.size]))
+        return "\n".join(output)
 
 
 def read_input(filepath: str) -> (list[Line], int):
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         max_ = 0
         lines = []
         for line in f.readlines():
             data = line.split()
-            x0 = int(data[0].split(',')[0])
-            y0 = int(data[0].split(',')[1])
-            x1 = int(data[-1].split(',')[0])
-            y1 = int(data[-1].split(',')[1])
+            x0 = int(data[0].split(",")[0])
+            y0 = int(data[0].split(",")[1])
+            x1 = int(data[-1].split(",")[0])
+            y1 = int(data[-1].split(",")[1])
 
             if max_ < max(x0, y0, x1, y1):
                 max_ = max(x0, y0, x1, y1)
@@ -91,7 +90,9 @@ def read_input(filepath: str) -> (list[Line], int):
 
 def init_parser() -> str:
     parser = argparse.ArgumentParser(description="Advent of Code day 5 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    parser.add_argument(
+        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
+    )
     args = parser.parse_args()
     return os.path.realpath(args.input[0])
 
@@ -110,4 +111,6 @@ if __name__ == "__main__":
     # print(map_, end='\n\n')
     print(f"Overlaps: {map_.overlaps()}")
 
-def main(_): raise NotImplementedError
+
+def main(_):
+    raise NotImplementedError

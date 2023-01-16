@@ -1,6 +1,5 @@
 import argparse
 import os
-
 from dataclasses import dataclass
 
 
@@ -11,7 +10,7 @@ class Move:
 
     @staticmethod
     def from_input(input: str):
-        dir_, dist = input.split(' ')
+        dir_, dist = input.split(" ")
         return Move(dir_, int(dist))
 
 
@@ -27,23 +26,25 @@ class Position:
     def move(self, movement: Move):
         # Dataclass automatically provides __match_args__
         match movement:
-            case Move('forward', distance):
+            case Move("forward", distance):
                 self.distance += distance
                 self.depth += self.aim * distance
-            case Move('up', distance):
+            case Move("up", distance):
                 self.aim -= distance
-            case Move('down', distance):
+            case Move("down", distance):
                 self.aim += distance
 
 
 def read_input(filepath: str):
-    with open(filepath, 'r') as f:
-        yield from (line.rstrip('\n') for line in f.readlines())
+    with open(filepath, "r") as f:
+        yield from (line.rstrip("\n") for line in f.readlines())
 
 
 def init_parser() -> str:
     parser = argparse.ArgumentParser(description="Advent of Code day 2 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    parser.add_argument(
+        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
+    )
     args = parser.parse_args()
     return os.path.realpath(args.input[0])
 
@@ -60,4 +61,7 @@ if __name__ == "__main__":
     print(f"Position: {position.distance}")
     print(f"Depth: {position.depth}")
     print(f"Answer: {position.product()}")
-def main(_): raise NotImplementedError
+
+
+def main(_):
+    raise NotImplementedError

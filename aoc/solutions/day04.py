@@ -4,7 +4,6 @@ from pprint import pprint
 
 
 class Board:
-
     def __init__(self, numbers: list[int]):
         self.numbers = numbers
         self.marked = [False] * len(numbers)
@@ -20,18 +19,20 @@ class Board:
     def check_horizontal(self):
         for row in range(5):
             pos = row * self.width
-            if all(self.marked[pos: pos + self.width]):
+            if all(self.marked[pos : pos + self.width]):
                 return True
         return False
 
     def check_vertical(self):
         for col in range(5):
-            if all([
+            if all(
+                [
                     self.marked[col],
                     self.marked[col + 5],
                     self.marked[col + 10],
                     self.marked[col + 15],
-                    self.marked[col + 20]]
+                    self.marked[col + 20],
+                ]
             ):
                 return True
         return False
@@ -50,27 +51,25 @@ class Board:
         i = 0
         for n in self.numbers:
             if i % 5 == 0:
-                output.append('\n')
+                output.append("\n")
             output.append(str(n))
             i += 1
 
         i = 0
         for m in self.marked:
             if i % 5 == 0:
-                output.append('\n')
-            output.append('x' if m else 'o')
+                output.append("\n")
+            output.append("x" if m else "o")
             i += 1
-        return ' '.join(output)
-
+        return " ".join(output)
 
     def __repr__(self):
         return f"Board({self.numbers}, {self.marked})"
 
 
-
 def read_input(filepath: str) -> (list[int], list[Board]):
     with open(filepath, "r") as f:
-        deck = f.readline().rstrip('\n').split(',')
+        deck = f.readline().rstrip("\n").split(",")
         boards = []
 
         f.readline()
@@ -86,8 +85,6 @@ def read_input(filepath: str) -> (list[int], list[Board]):
         boards.append(Board(acc))
 
     return (deck, boards)
-
-
 
 
 def init_parser() -> str:
@@ -114,4 +111,6 @@ if __name__ == "__main__":
                 print(f"Win: {b.score(n)}")
                 exit()
 
-def main(_): raise NotImplementedError
+
+def main(_):
+    raise NotImplementedError

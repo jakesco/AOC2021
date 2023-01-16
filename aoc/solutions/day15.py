@@ -1,9 +1,7 @@
 import argparse
 import os
-
-from math import sqrt
-
 from dataclasses import dataclass
+from math import sqrt
 
 
 @dataclass(frozen=True)
@@ -28,7 +26,9 @@ class Path:
 
     @property
     def risk(self):
-        return self.current.risk + sum([n.risk for n in self.path if not n.x == n.y == 0])
+        return self.current.risk + sum(
+            [n.risk for n in self.path if not n.x == n.y == 0]
+        )
 
 
 class Graph:
@@ -39,32 +39,27 @@ class Graph:
         for r in range(self.rows):
             for c in range(self.cols):
                 self.__nodes.append(
-                    Node(
-                        r,
-                        c,
-                        grid[r][c],
-                        r == self.rows -1 and c == self.cols - 1
-                    )
+                    Node(r, c, grid[r][c], r == self.rows - 1 and c == self.cols - 1)
                 )
 
     def __str__(self):
         output = [str(n) for n in self.__nodes]
         for r in range(self.cols, len(self.__nodes), self.cols + 1):
-            output.insert(r, '\n')
-        return ''.join(output)
+            output.insert(r, "\n")
+        return "".join(output)
 
     def render_path(self, path: Path):
         output = []
         for n in self.__nodes:
             if n in path.path:
-                output.append('.')
+                output.append(".")
             elif n.end:
-                output.append('.')
+                output.append(".")
             else:
                 output.append(str(n))
         for r in range(self.cols, len(self.__nodes), self.cols + 1):
-            output.insert(r, '\n')
-        print(''.join(output))
+            output.insert(r, "\n")
+        print("".join(output))
 
     def get(self, row: int, col: int) -> Node | None:
         if (0 <= row < self.rows) and (0 <= col < self.cols):
@@ -111,7 +106,7 @@ class Graph:
 
 def read_input(filepath: str, *, expand: bool = False) -> Graph:
     map_ = list()
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         if expand:
             for line in f.readlines():
                 l = [int(n) for n in line.strip()]
@@ -135,7 +130,9 @@ def read_input(filepath: str, *, expand: bool = False) -> Graph:
 
 def init_parser() -> str:
     parser = argparse.ArgumentParser(description="Advent of Code day 15 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    parser.add_argument(
+        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
+    )
     args = parser.parse_args()
     return os.path.realpath(args.input[0])
 
@@ -151,4 +148,6 @@ if __name__ == "__main__":
     path2 = g_p2.dijkstra()
     print(f"Part 2: {path2.risk}")
 
-def main(_): raise NotImplementedError
+
+def main(_):
+    raise NotImplementedError

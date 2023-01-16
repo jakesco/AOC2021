@@ -1,6 +1,5 @@
 import argparse
 import os
-
 from functools import reduce
 
 
@@ -98,4 +97,6 @@ if __name__ == "__main__":
     print(f"CO2: {lf[1]} - 10")
     print(f"Life Support: {lf[0] * lf[1]} - 230")
 
-def main(_): raise NotImplementedError
+
+def main(_):
+    raise NotImplementedError

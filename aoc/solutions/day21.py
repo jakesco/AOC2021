@@ -1,11 +1,9 @@
 import argparse
 import os
-
 from collections import deque
 from dataclasses import dataclass
-from itertools import product
 from functools import cache
-
+from itertools import product
 
 DIRAC_ROLL_COMBOS = [sum(r) for r in product((1, 2, 3), repeat=3)]
 
@@ -82,15 +80,17 @@ def part2(p1: Player, p2: Player) -> dict[int, int]:
 
 
 def read_input(filepath: str) -> (Player, Player):
-    with open(filepath, 'r') as f:
-        start1 = int(f.readline().split(':')[1].strip())
-        start2 = int(f.readline().split(':')[1].strip())
+    with open(filepath, "r") as f:
+        start1 = int(f.readline().split(":")[1].strip())
+        start2 = int(f.readline().split(":")[1].strip())
     return Player(start1), Player(start2)
 
 
 def init_parser() -> str:
     parser = argparse.ArgumentParser(description="Advent of Code day 21 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    parser.add_argument(
+        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
+    )
     args = parser.parse_args()
     return os.path.realpath(args.input[0])
 
@@ -104,4 +104,6 @@ if __name__ == "__main__":
     wins = part2(player1, player2)
     print(f"Part 2: {max(wins[1], wins[2])}")
 
-def main(_): raise NotImplementedError
+
+def main(_):
+    raise NotImplementedError

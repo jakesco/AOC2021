@@ -1,7 +1,6 @@
 import argparse
 import os
-
-from collections import deque, Counter
+from collections import Counter, deque
 from dataclasses import dataclass, field, replace
 
 
@@ -26,11 +25,7 @@ class Path:
 
     def can_visit(self, node: Node) -> bool:
         allow_more_visits = all(
-            [
-                c < self.max_visits
-                for n, c in self.visited.items()
-                if not n.big
-            ]
+            [c < self.max_visits for n, c in self.visited.items() if not n.big]
         )
         return allow_more_visits or node.big or not (node in self.visited)
 
@@ -56,7 +51,7 @@ class Graph:
         output = []
         for k, v in self.__nodes.items():
             output.append(f"{k} <-> {[n for n in v]}")
-        return '\n'.join(output)
+        return "\n".join(output)
 
     def __new_node(self, name) -> Node:
         node = Node(name, name.isupper())
@@ -82,8 +77,8 @@ class Graph:
         self.__nodes[node2].add(node1)
 
     def find_paths(self, max_visits: int = 1) -> list[Path]:
-        start = self.__lookup['start']
-        end = self.__lookup['end']
+        start = self.__lookup["start"]
+        end = self.__lookup["end"]
         seed = Path([start], Counter([start]), max_visits)
 
         active = deque([seed])
@@ -107,16 +102,18 @@ class Graph:
 
 def read_input(filepath: str) -> Graph:
     graph = Graph()
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         for line in f.readlines():
-            nodes = line.rstrip().split('-')
+            nodes = line.rstrip().split("-")
             graph.add_connection(nodes[0], nodes[1])
     return graph
 
 
 def init_parser() -> str:
     parser = argparse.ArgumentParser(description="Advent of Code day 12 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    parser.add_argument(
+        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
+    )
     args = parser.parse_args()
     return os.path.realpath(args.input[0])
 
@@ -129,4 +126,6 @@ if __name__ == "__main__":
     paths_part2 = graph.find_paths(2)
     print(f"Part 2: {len(paths_part2)}(36) distinct paths")
 
-def main(_): raise NotImplementedError
+
+def main(_):
+    raise NotImplementedError

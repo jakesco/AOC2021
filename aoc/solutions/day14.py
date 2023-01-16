@@ -1,6 +1,5 @@
 import argparse
 import os
-
 from collections import Counter
 from functools import cache
 
@@ -14,11 +13,7 @@ def simulate(pair: str, steps: int) -> Counter:
     if steps <= 0:
         return Counter(pair)
     left, right = insert_char(pair, rules[pair])
-    return (
-            simulate(left, steps - 1)
-            + simulate(right, steps - 1)
-            - Counter(rules[pair])
-    )
+    return simulate(left, steps - 1) + simulate(right, steps - 1) - Counter(rules[pair])
 
 
 def score(counter: Counter) -> int:
@@ -29,26 +24,25 @@ def score(counter: Counter) -> int:
 
 
 def get_pairs(template: str) -> list[str]:
-    return [
-        template[i:i + 2]
-        for i in range(len(template) - 1)
-    ]
+    return [template[i : i + 2] for i in range(len(template) - 1)]
 
 
 def read_input(filepath: str) -> (str, dict[str, str]):
     rules = dict()
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         template = f.readline().rstrip()
         f.readline()
         for line in f.readlines():
-            data = line.split('->')
+            data = line.split("->")
             rules[data[0].strip()] = data[1].strip()
     return template, rules
 
 
 def init_parser() -> str:
     parser = argparse.ArgumentParser(description="Advent of Code day 14 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    parser.add_argument(
+        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
+    )
     args = parser.parse_args()
     return os.path.realpath(args.input[0])
 
@@ -73,5 +67,5 @@ if __name__ == "__main__":
     print(f"Part 2: {score(part2)}")
 
 
-
-def main(_): raise NotImplementedError
+def main(_):
+    raise NotImplementedError

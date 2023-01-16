@@ -1,27 +1,26 @@
 import argparse
 import os
-
-from dataclasses import dataclass
 from collections import deque
+from dataclasses import dataclass
 from math import prod
 
 HEX_TO_BIN = {
-    "0": '0000',
-    "1": '0001',
-    "2": '0010',
-    "3": '0011',
-    "4": '0100',
-    "5": '0101',
-    "6": '0110',
-    "7": '0111',
-    "8": '1000',
-    "9": '1001',
-    "A": '1010',
-    "B": '1011',
-    "C": '1100',
-    "D": '1101',
-    "E": '1110',
-    "F": '1111'
+    "0": "0000",
+    "1": "0001",
+    "2": "0010",
+    "3": "0011",
+    "4": "0100",
+    "5": "0101",
+    "6": "0110",
+    "7": "0111",
+    "8": "1000",
+    "9": "1001",
+    "A": "1010",
+    "B": "1011",
+    "C": "1100",
+    "D": "1101",
+    "E": "1110",
+    "F": "1111",
 }
 
 
@@ -49,7 +48,7 @@ class Operator(Packet):
 
 class Stream:
     def __init__(self, hex_input: str):
-        binary = ''.join([HEX_TO_BIN[c] for c in hex_input])
+        binary = "".join([HEX_TO_BIN[c] for c in hex_input])
         self.__data: deque[str] = deque([b for b in binary])
 
     @property
@@ -57,14 +56,14 @@ class Stream:
         return len(self.__data)
 
     def pick(self, n: int = 1) -> str:
-        """ Read next n bits from stream."""
+        """Read next n bits from stream."""
         acc = list()
         for i in range(n):
             acc.append(self.__data.popleft())
-        return ''.join(acc)
+        return "".join(acc)
 
     def pick_int(self, n: int = 1) -> int:
-        """ Read next n bits from stream as int."""
+        """Read next n bits from stream as int."""
         binary = self.pick(n)
         return int(binary, 2)
 
@@ -82,7 +81,7 @@ def process_operator(stream: Stream) -> Packet | None:
             if group.startswith("0"):
                 break
 
-        value = int(''.join(val), 2)
+        value = int("".join(val), 2)
         return Literal(version, type_, value)
 
     # otherwise operator
@@ -128,14 +127,16 @@ def eval_(op: Packet) -> int:
 
 
 def read_input(filepath: str) -> Stream:
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         hex_input = f.read().strip()
     return Stream(hex_input)
 
 
 def init_parser() -> str:
     parser = argparse.ArgumentParser(description="Advent of Code day 16 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    parser.add_argument(
+        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
+    )
     args = parser.parse_args()
     return os.path.realpath(args.input[0])
 
@@ -149,9 +150,5 @@ if __name__ == "__main__":
     print(f"Part 2: {eval_(packet)}")
 
 
-
-
-
-
-
-def main(_): raise NotImplementedError
+def main(_):
+    raise NotImplementedError

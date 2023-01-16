@@ -1,38 +1,29 @@
 import argparse
 import os
-
 from collections import deque
 
 CHUNK_MAP = {
-    '(': ')',
-    '<': '>',
-    '[': ']',
-    '{': '}',
+    "(": ")",
+    "<": ">",
+    "[": "]",
+    "{": "}",
 }
 
-POINTS = {
-    ')': 3,
-    ']': 57,
-    '}': 1197,
-    '>': 25137
-}
+POINTS = {")": 3, "]": 57, "}": 1197, ">": 25137}
 
-POINTS2 = {
-    ')': 1,
-    ']': 2,
-    '}': 3,
-    '>': 4
-}
+POINTS2 = {")": 1, "]": 2, "}": 3, ">": 4}
 
 
 def read_input(filepath: str):
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         return [l.strip() for l in f.readlines()]
 
 
 def init_parser() -> str:
     parser = argparse.ArgumentParser(description="Advent of Code day 10 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    parser.add_argument(
+        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
+    )
     args = parser.parse_args()
     return os.path.realpath(args.input[0])
 
@@ -77,7 +68,7 @@ def complete_line(line: str) -> str:
         elif char in CHUNK_MAP.values() and len(stack) > 0:
             stack.pop()
     stack.reverse()
-    return ''.join([s for s in stack])
+    return "".join([s for s in stack])
 
 
 def calculate_points(completion: str) -> int:
@@ -105,15 +96,10 @@ if __name__ == "__main__":
 
     lines = read_input(path)
 
-    print(f'Part 1: {part_1(lines)}')
+    print(f"Part 1: {part_1(lines)}")
 
-    print(f'Part 2: {part_2(lines)}')
-
-
+    print(f"Part 2: {part_2(lines)}")
 
 
-
-
-
-
-def main(_): raise NotImplementedError
+def main(_):
+    raise NotImplementedError

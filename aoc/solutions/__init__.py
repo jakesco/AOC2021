@@ -10,18 +10,12 @@ from .shared import Solution
 SOLUTION_REGEX = re.compile(r"day(?P<day>\d+)")
 
 
-def solve(day: int, filename: Path) -> Solution:
+def solve(day: int, input_: list[str]) -> Solution:
     """Run solution for a given day."""
-
-    if not filename.exists():
-        raise FileNotFoundError("input file does not exist: '%s'" % filename)
 
     solution_registry = _find_solutions()
     if day not in solution_registry.keys():
         raise IndexError("day not implemented yet: '%s'" % day)
-
-    with filename.open() as f:
-        input_ = f.read().splitlines()
 
     return solution_registry[day](input_)
 

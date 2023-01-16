@@ -2,20 +2,16 @@ import argparse
 import itertools
 import os
 import re
-
-from math import floor, ceil
-
 from abc import ABC, abstractmethod
 from collections import deque
-from itertools import permutations
-
 from dataclasses import dataclass
+from itertools import permutations
+from math import ceil, floor
 
 
 class Element(ABC):
-
     @abstractmethod
-    def _literals(self, acc) -> list['Literal']:
+    def _literals(self, acc) -> list["Literal"]:
         pass
 
     @abstractmethod
@@ -23,7 +19,7 @@ class Element(ABC):
         pass
 
     @abstractmethod
-    def add(self, other: 'Element'):
+    def add(self, other: "Element"):
         pass
 
     @abstractmethod
@@ -39,7 +35,7 @@ class Element(ABC):
         pass
 
     @staticmethod
-    def get_literals(s: 'Element') -> list['Literal']:
+    def get_literals(s: "Element") -> list["Literal"]:
         acc = []
         s._literals(acc)
         return acc
@@ -60,7 +56,7 @@ class SnailFishNumber(Element):
     def magnitude(self) -> int:
         return 3 * self.l.magnitude() + 2 * self.r.magnitude()
 
-    def add(self, other: Element) -> 'SnailFishNumber':
+    def add(self, other: Element) -> "SnailFishNumber":
         result = SnailFishNumber(self, other)
         # print(f"{self} + {other}")
         # print(f"= {result}")
@@ -97,9 +93,9 @@ class SnailFishNumber(Element):
 
     def explode(self, depth) -> tuple[int, int] | None:
         """
-            Explodes left most explodeable value, returns (left,right) tuple
-            if explode happened else None. (left,right) tuple must be applied
-            via self.apply_explode before explode is complete.
+        Explodes left most explodeable value, returns (left,right) tuple
+        if explode happened else None. (left,right) tuple must be applied
+        via self.apply_explode before explode is complete.
         """
         # If a pair is nested in 4 pairs, the left pair explodes
         if depth >= 3 and self.l.can_explode():
@@ -185,16 +181,17 @@ def parse_helper(input_: deque[str]) -> Element:
     right = parse_helper(input_)
     return SnailFishNumber(left, right)
 
+
 def parse(input_: str) -> Element:
     """Parses Snailfish Number."""
-    chars = re.findall(r'\[|\d', input_.strip())
+    chars = re.findall(r"\[|\d", input_.strip())
     snail_string = deque([c for c in chars])
     return parse_helper(snail_string)
 
 
 def read_input(filepath: str) -> list[str]:
     output = list()
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         for line in f.readlines():
             output.append(line.strip())
     return output
@@ -202,7 +199,9 @@ def read_input(filepath: str) -> list[str]:
 
 def init_parser() -> str:
     parser = argparse.ArgumentParser(description="Advent of Code day 18 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    parser.add_argument(
+        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
+    )
     args = parser.parse_args()
     return os.path.realpath(args.input[0])
 
@@ -227,4 +226,6 @@ if __name__ == "__main__":
         max_magnitude = max(sum_.magnitude(), max_magnitude)
     print(f"Part 2: {max_magnitude}")
 
-def main(_): raise NotImplementedError
+
+def main(_):
+    raise NotImplementedError

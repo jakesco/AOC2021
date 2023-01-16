@@ -1,20 +1,39 @@
 import argparse
 import os
-
+from collections import Counter, deque
 from collections.abc import Callable
-from collections import deque, Counter
 from dataclasses import dataclass
-from functools import reduce, cache
+from functools import cache, reduce
+from itertools import combinations
 from pprint import pprint
 
-from itertools import combinations
-
-
 UNIQUE_ROTATIONS = (
-    'I', 'X', 'Y', 'Z', 'XX', 'XY', 'XZ', 'YX', 'YY', 'ZY',
-    'ZZ', 'XXX', 'XXY', 'XXZ', 'XYX', 'XYY', 'XZZ', 'YXX',
-    'YYY', 'ZZZ', 'XXXY', 'XXYX', 'XYXX', 'XYYY'
+    "I",
+    "X",
+    "Y",
+    "Z",
+    "XX",
+    "XY",
+    "XZ",
+    "YX",
+    "YY",
+    "ZY",
+    "ZZ",
+    "XXX",
+    "XXY",
+    "XXZ",
+    "XYX",
+    "XYY",
+    "XZZ",
+    "YXX",
+    "YYY",
+    "ZZZ",
+    "XXXY",
+    "XXYX",
+    "XYXX",
+    "XYYY",
 )
+
 
 @cache
 def rotation_factory(rotations: str) -> Callable:
@@ -28,14 +47,15 @@ def rotation_factory(rotations: str) -> Callable:
         once around y and once around z
     """
     rotation_map = {
-        'i': lambda b: b,
-        'x': lambda b: Beacon(b.x, -b.z, b.y),
-        'y': lambda b: Beacon(b.z, b.y, -b.x),
-        'z': lambda b: Beacon(-b.y, b.x, b.z),
+        "i": lambda b: b,
+        "x": lambda b: Beacon(b.x, -b.z, b.y),
+        "y": lambda b: Beacon(b.z, b.y, -b.x),
+        "z": lambda b: Beacon(-b.y, b.x, b.z),
     }
 
     def compose(f, g):
         return lambda x: f(g(x))
+
     functions = [rotation_map[r] for r in rotations.lower()]
     return reduce(compose, functions, lambda b: b)
 
@@ -49,23 +69,19 @@ class Beacon:
     def __repr__(self):
         return f"({self.x}, {self.y}, {self.z})"
 
-    def translate(self, reference: 'Beacon') -> 'Beacon':
-        return Beacon(
-            reference.x - self.x,
-            reference.y - self.y,
-            reference.z - self.z
-        )
+    def translate(self, reference: "Beacon") -> "Beacon":
+        return Beacon(reference.x - self.x, reference.y - self.y, reference.z - self.z)
 
-    def add(self, other: 'Beacon') -> 'Beacon':
+    def add(self, other: "Beacon") -> "Beacon":
         return Beacon(self.x + other.x, self.y + other.y, self.z + other.z)
 
-    def sub(self, other: 'Beacon') -> 'Beacon':
+    def sub(self, other: "Beacon") -> "Beacon":
         return Beacon(self.x - other.x, self.y - other.y, self.z - other.z)
 
 
 @dataclass(frozen=True)
 class Orientation:
-    rotation: str = ''
+    rotation: str = ""
     translation: Beacon = Beacon()
 
     def __repr__(self):
@@ -76,7 +92,7 @@ class Orientation:
 class Scanner:
     id: int
     beacons: set[Beacon]
-    match: 'Scanner' = None
+    match: "Scanner" = None
     orientation: Orientation = Orientation()
     center = Beacon()
 
@@ -112,7 +128,10 @@ def mdistance_between_scanners(s0: Scanner, s1: Scanner) -> int:
 
 
 def transform_beacons(beacons: set[Beacon], orientation: Orientation) -> set[Beacon]:
-    return {rotation_factory(orientation.rotation)(b).add(orientation.translation) for b in beacons}
+    return {
+        rotation_factory(orientation.rotation)(b).add(orientation.translation)
+        for b in beacons
+    }
 
 
 def match_overlaping_scanner(scanners: list[Scanner]):
@@ -174,12 +193,12 @@ def scanner_to_origin(s: Scanner) -> set[Beacon]:
 def read_input(filepath: str) -> list[Scanner]:
     output = list()
     scanner = 0
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         for line in (l.strip() for l in f.readlines()):
             if line.startswith("---"):
                 beacons = set()
-            elif line != '':
-                point = [int(x) for x in line.split(',')]
+            elif line != "":
+                point = [int(x) for x in line.split(",")]
                 beacons.add(Beacon(point[0], point[1], point[2]))
             else:
                 output.append(Scanner(scanner, beacons))
@@ -190,7 +209,9 @@ def read_input(filepath: str) -> list[Scanner]:
 
 def init_parser() -> str:
     parser = argparse.ArgumentParser(description="Advent of Code day 19 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    parser.add_argument(
+        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
+    )
     args = parser.parse_args()
     return os.path.realpath(args.input[0])
 
@@ -202,23 +223,14 @@ if __name__ == "__main__":
     match_overlaping_scanner(scanners)
     [match_scanners(s) for s in scanners]
 
-    unique = reduce(lambda a, b: a.union(b), [scanner_to_origin(s) for s in scanners], set())
+    unique = reduce(
+        lambda a, b: a.union(b), [scanner_to_origin(s) for s in scanners], set()
+    )
     print(f"Part 1: {len(unique)}")
 
     distances = [mdistance_between_scanners(x, y) for x, y in combinations(scanners, 2)]
     print(f"Part 2: {max(distances)}")
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-def main(_): raise NotImplementedError
+def main(_):
+    raise NotImplementedError

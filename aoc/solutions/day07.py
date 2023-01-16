@@ -3,15 +3,17 @@ import os
 
 
 def read_input(filepath: str) -> list[int]:
-    with open(filepath, 'r') as f:
-        input_ = [int(n) for n in f.readline().split(',')]
+    with open(filepath, "r") as f:
+        input_ = [int(n) for n in f.readline().split(",")]
         input_.sort()
         return input_
 
 
 def init_parser() -> str:
     parser = argparse.ArgumentParser(description="Advent of Code day 7 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    parser.add_argument(
+        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
+    )
     args = parser.parse_args()
     return os.path.realpath(args.input[0])
 
@@ -38,7 +40,9 @@ def fuel_cost_part2(data: list[int], destination: int) -> int:
     return int(fuel)
 
 
-def search_field(data: list[int], search_space: range, start: (int, int), cost_function: callable) -> (int, int):
+def search_field(
+    data: list[int], search_space: range, start: (int, int), cost_function: callable
+) -> (int, int):
     best = start
     for i in search_space:
         new = (i, cost_function(data, i))
@@ -72,4 +76,6 @@ if __name__ == "__main__":
 
     print(f"Best position: {best[0]} | Cost: {best[1]}")
 
-def main(_): raise NotImplementedError
+
+def main(_):
+    raise NotImplementedError

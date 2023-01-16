@@ -1,7 +1,6 @@
 import argparse
 import os
 import re
-
 from dataclasses import dataclass
 
 
@@ -41,19 +40,22 @@ class Probe:
         return None
 
     def in_target(self, target: Target) -> bool:
-        return ((target.x[0] <= self.x <= target.x[1])
-                and (target.y[0] <= self.y <= target.y[1]))
+        return (target.x[0] <= self.x <= target.x[1]) and (
+            target.y[0] <= self.y <= target.y[1]
+        )
 
 
 def read_input(filepath: str) -> Target:
-    with open(filepath, 'r') as f:
-        match_ = re.findall(r'-\d+|\d+', f.read())
+    with open(filepath, "r") as f:
+        match_ = re.findall(r"-\d+|\d+", f.read())
     return Target((int(match_[0]), int(match_[1])), (int(match_[2]), int(match_[3])))
 
 
 def init_parser() -> str:
     parser = argparse.ArgumentParser(description="Advent of Code day 17 solution.")
-    parser.add_argument('input', metavar='FILE', type=str, nargs=1, help="Path to input data.")
+    parser.add_argument(
+        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
+    )
     args = parser.parse_args()
     return os.path.realpath(args.input[0])
 
@@ -74,4 +76,5 @@ if __name__ == "__main__":
     print(f"Part 2: {len(max_height)}")
 
 
-def main(_): raise NotImplementedError
+def main(_):
+    raise NotImplementedError
