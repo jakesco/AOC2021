@@ -130,6 +130,6 @@ dmypy.json
 
 # pyCharm
 .idea/
+input.txt
+test*.txt
 
-# Poetry
-poetry.lock
