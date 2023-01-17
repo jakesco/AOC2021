@@ -1,6 +1,7 @@
 import argparse
 import sys
 import traceback
+import urllib.error
 from pathlib import Path
 
 from downloader import download_input
@@ -31,7 +32,7 @@ if __name__ == "__main__":
         if not filename.exists():
             raise FileNotFoundError("input file does not exist: '%s'" % args.filename)
 
-        with args.filename.open() as f:
+        with filename.open() as f:
             input_ = f.read().splitlines()
 
         solution = solve(args.day, input_)
@@ -42,7 +43,12 @@ if __name__ == "__main__":
     except IndexError as e:
         sys.stderr.write("aoc: error: %s\n" % e)
         sys.exit(2)
+    except urllib.error.HTTPError:
+        sys.stderr.write(
+            "aoc: error: error downloading input. Is your token expired?\n"
+        )
+        sys.exit(3)
     except Exception as e:
         sys.stderr.write("aoc: error: %s\n" % e)
         traceback.print_exc()
-        sys.exit(3)
+        sys.exit(4)

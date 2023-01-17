@@ -1,6 +1,4 @@
-import argparse
-import os
-from pprint import pprint
+from .shared import Solution
 
 
 class Board:
@@ -67,9 +65,10 @@ class Board:
         return f"Board({self.numbers}, {self.marked})"
 
 
-def read_input(filepath: str) -> (list[int], list[Board]):
-    with open(filepath, "r") as f:
-        deck = f.readline().rstrip("\n").split(",")
+def read_input(lines: list[str]) -> (list[int], list[Board]):
+    deck = [l.rstrip("\n").split(",") for l in lines]
+    with open("test.txt", "r") as f:
+        deck = f.readline()
         boards = []
 
         f.readline()
@@ -87,19 +86,8 @@ def read_input(filepath: str) -> (list[int], list[Board]):
     return (deck, boards)
 
 
-def init_parser() -> str:
-    parser = argparse.ArgumentParser(description="Advent of Code day 4 solution.")
-    parser.add_argument(
-        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
-    )
-    args = parser.parse_args()
-    return os.path.realpath(args.input[0])
-
-
-if __name__ == "__main__":
-    path = init_parser()
-
-    deck, boards = read_input(path)
+def main(input_: list[str]) -> Solution:
+    deck, boards = read_input(input_)
 
     for n in deck:
         print(f"Call: {n}")
@@ -109,8 +97,5 @@ if __name__ == "__main__":
             b.check_win()
             if all([w.win for w in boards]):
                 print(f"Win: {b.score(n)}")
-                exit()
 
-
-def main(_):
-    raise NotImplementedError
+    return Solution()

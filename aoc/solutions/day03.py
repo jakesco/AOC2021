@@ -1,6 +1,6 @@
-import argparse
-import os
 from functools import reduce
+
+from .shared import Solution
 
 
 def frequency(input_: list[str]) -> list[int]:
@@ -64,39 +64,7 @@ def part2(input_) -> tuple[int, int]:
     return (int(o2[0], 2), int(co2[0], 2))
 
 
-def read_input(filepath: str):
-    with open(filepath, "r") as f:
-        return [line.rstrip("\n") for line in f.readlines()]
-
-
-def init_parser() -> str:
-    parser = argparse.ArgumentParser(description="Advent of Code day 3 solution.")
-    parser.add_argument(
-        "input", metavar="FILE", type=str, nargs=1, help="Path to input data."
-    )
-    args = parser.parse_args()
-    return os.path.realpath(args.input[0])
-
-
-if __name__ == "__main__":
-    path = init_parser()
-
-    input_ = read_input(path)
-
+def main(input_: list[str]):
     rates = part1(input_)
-
-    print(f"Part 1:")
-    print(f"γ: {rates[0]} - 22")
-    print(f"ε: {rates[1]} - 9")
-    print(f"Power Consumption: {rates[0] * rates[1]} - 198")
-
     lf = part2(input_)
-
-    print(f"\nPart 2:")
-    print(f"O2: {lf[0]} - 23")
-    print(f"CO2: {lf[1]} - 10")
-    print(f"Life Support: {lf[0] * lf[1]} - 230")
-
-
-def main(_):
-    raise NotImplementedError
+    return Solution(rates[0] * rates[1], lf[0] * lf[1])
